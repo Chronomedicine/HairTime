@@ -1,5 +1,5 @@
 ---
-title: "Hair Time - sensitivity test"
+title: "Hair Time"
 author: "LKP & AR"
 date: "2025-02-27"
 output: 
@@ -19,7 +19,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Initial note:
 
 Figure 4A is derived from Dataset 1  (n = 4531).
-Figures 4B, 4C, 5A, and 5C are based on Dataset 2 (n = 3593 - after removing any sample with extra entries in the intial dataset), while Figure 5B is generated from Dataset 3 (n = 1332 - after removing any sample with extra entries in the intial dataset).
+Figures 4B, 4C, 5A, and 5C are based on Dataset 2 (n = 3949), while Figure 5B is generated from Dataset 3 (n = 1450).  
 Hairtime (pDLMO) distribution is consistent across all datasets. However, we re-plotted it to maintain a consistent structure across markdown sections and display the distribution of the sample from which each figure originates.
 
 ## Figure 4A 
@@ -28,14 +28,12 @@ Hairtime (pDLMO) distribution is consistent across all datasets. However, we re-
 
 ```{r}
 rm(list = ls(all = TRUE))
-# I could not load the data from the Rda file, so I loaded the data from db_all.Rda
-load("06_FinalDataset/ht1.Rda")
+
+load("~/Desktop/BodyTime_Final_Version/06_FinalDataset_2024/ht1.Rda")
 
 suppressMessages(library(ggplot2))
 suppressMessages(library(tidyverse))
 
-
-# hair time - h from midnight (circ plot option commented out in the end of script)
 ht1$hair_time <- ifelse(ht1$hair_time > 13, ht1$hair_time -24, ht1$hair_time)
 
 # plot 
@@ -142,15 +140,14 @@ distr
 
 ```{r}
 rm(list = ls(all = TRUE)) 
-load("06_FinalDataset/ht2.Rda")
+load("~/Desktop/BodyTime_Final_Version/06_FinalDataset_2024/ht2.Rda")
 
-dup <- read.csv("06_FinalDataset/db_duplicate.csv") # 3949
+dup <- read.csv("~/Desktop/BodyTime_Final_Version/06_FinalDataset_2024/db_duplicate.csv") # 3949
 colnames(dup) <- c("index", "duplicates")
 
 # filter ht2 if ht2$id_s is in the dup$duplicates
 ht2 <- ht2[!(ht2$id_s %in% dup$duplicates), ] # 3593
 3949 - 3593
-
 
 library(ggplot2)
 library(tidyverse)
@@ -237,7 +234,6 @@ suppressMessages(library(Directional))
 
 # Perform correlation test
 corr <- cor.test(log(ht2$age), ht2$hair_time)
-corr
 
 # Perform t-test
 median(ht2$age)
@@ -304,31 +300,31 @@ print(paste("Time difference between young and old groups (minutes):", round(tim
 
 ### Model
 
-```{r}
+```{r }
 
 library(splines)
-m2 <- lm(hair_time ~  sex + age, data = ht2)
-m1 <- lm(hair_time ~  sex + bs(age), data = ht2)
+m1 <- lm(hair_time ~  sex + age, data = ht2)
+m2 <- lm(hair_time ~  sex + bs(age), data = ht2)
+
 jtools::summ(m1, digits = 3, confint = T)
+jtools::summ(m2, digits = 3, confint = T)
+
+```
+
+#### BIC: 
+
+```{r}
+print(paste0("BIC for model 1 (age linear): ", BIC(m1)))
+print(paste0("BIC for model 2 (age splines): ", BIC(m2)))
+print("Selected: model 2")
 ```
 
 ### Checking assumptions
 
 ```{r, fig.width=8, fig.height=8}
 suppressMessages(library(performance))
-check_model(m1)
-
+check_model(m2)
 ```
-
-#### BIC: linear vs. spline model
-
-```{r}
-print(paste0("BIC for spline model: ", BIC(m1)))
-print(paste0("BIC for linear model: ", BIC(m2)))
-```
-
-
-
 
 ### Plots
 
@@ -336,9 +332,9 @@ print(paste0("BIC for linear model: ", BIC(m2)))
 
 # get lines ----------------------------------------------------
 
-eff_age <- ggeffects::predict_response(m1, margin = "marginalmeans", terms = "age")
-eff_sex <- ggeffects::predict_response(m1, margin = "marginalmeans", terms = "sex")
-eff <- ggeffects::predict_response(m1, margin = "marginalmeans", terms = c("age", "sex"))
+eff_age <- ggeffects::predict_response(m2, margin = "marginalmeans", terms = "age")
+eff_sex <- ggeffects::predict_response(m2, margin = "marginalmeans", terms = "sex")
+eff <- ggeffects::predict_response(m2, margin = "marginalmeans", terms = c("age", "sex"))
 eff <- eff %>% rename(hair_time = predicted)
 eff_age <- eff_age %>% rename(hair_time = predicted)
 
@@ -385,8 +381,8 @@ as_distr <-
   scale_x_continuous(name = "Age", breaks = seq(20, 80, 10)) +
   scale_y_continuous("Predicted DLMO (hours)",
                      breaks = c(-4,-3.5,-3, -2.5, -2),
-                     labels = c("20:00", "20:30",
-                                "21:00", "21:30", "22:00"),
+                     labels = c("20.00", "20.50",
+                                "21.00", "21.50", "22.00"),
                      limits = c(-4, -2)) +
   theme(plot.background = element_rect(fill = "transparent", colour = "transparent"),
         plot.margin = margin(.8, .8, .8, .6, "cm"),
@@ -401,8 +397,8 @@ as_distr <-
         legend.position = c(1, 1),
         legend.justification = c(1, 1)) +
   scale_size(name = "Bin sample size", 
-             limits = c(80, 400), range = c(1,5),
-             breaks = c(100, 200, 300, 400)) 
+             limits = c(80, 500), range = c(1,5),
+             breaks = c(100, 200, 300, 500)) 
 
 as_distr
 ```
@@ -414,15 +410,14 @@ as_distr
 
 ```{r}
 rm(list = ls(all = TRUE)) 
-load("06_FinalDataset/ht2.Rda")
+load("~/Desktop/BodyTime_Final_Version/06_FinalDataset_2024/ht2.Rda")
 
-dup <- read.csv("06_FinalDataset/db_duplicate.csv") # 3949
+dup <- read.csv("~/Desktop/BodyTime_Final_Version/06_FinalDataset_2024/db_duplicate.csv") # 3949
 colnames(dup) <- c("index", "duplicates")
 
 # filter ht2 if ht2$id_s is in the dup$duplicates
 ht2 <- ht2[!(ht2$id_s %in% dup$duplicates), ] # 3593
 3949 - 3593
-
 
 library(ggplot2)
 library(tidyverse)
@@ -532,28 +527,10 @@ print((((-0.8551704 * 12 / 3.14159265359) + 24)-((-0.9232520 * 12 / 3.1415926535
 ### Model
 
 ```{r}
-# Build models
+# Build model
 m1 <- lm(hair_time ~ sex + bs(age), data = ht2)
 jtools::summ(m1, digits = 3, confint = T)
 
-```
-
-#### Converting Est. to minutes
-
-```{r}
-convert_to_minutes <- function(coef_value) {
-  minutes <- coef_value * 60  # Convert hours to minutes
-  seconds <- (minutes - floor(minutes)) * 60  # Extract remaining seconds
-  return(sprintf("%d min %d sec", floor(minutes), round(seconds)))
-}
-
-coefficients <- c(
-  sexF = -0.108
-)
-# Apply the conversion function
-converted_times <- sapply(coefficients, convert_to_minutes)
-# Print results
-print(converted_times)
 ```
 
 ### Checking assumptions
@@ -567,8 +544,10 @@ check_model(m1)
 ### Plot
 
 ```{r, warning=FALSE}
+
 library(emmeans)
 library(ggpubr)
+
 # Compute emmeans for pairwise comparisons
 emmeans_results <- emmeans(m1, ~ sex)
 pairwise_comparison <- contrast(emmeans_results, method = "pairwise")
@@ -592,7 +571,7 @@ mod_sex <- ggplot() +
   xlab("Sex") +
   scale_y_continuous("Predicted DLMO (hours)",
                      breaks = c(-4.00, -3.75, -3.5, -3.25, -3),
-                     labels = c("19:00", "20:15", "20:30", "20:45", "21:00"),
+                     labels = c("19.00", "20.25", "20.50", "20.75", "21.00"),
                      limits = c(-3.8, -3.2)) +  
   theme(plot.background = element_rect(fill = "transparent", colour = "transparent"),
         plot.margin = margin(.8, .8, .8, .6, "cm"),
@@ -630,7 +609,7 @@ violin <- ggplot(ht2, aes(x = sex, y = hair_time)) +
   xlab("Sex") +
   scale_y_continuous("Predicted DLMO (hours)",
                      breaks = c(-10, -7.5, -5, -2.5, 0, 2.5, 5.0),
-                     labels = c("14:00", "16:30", "19:00", "21:30", "00:00", "02:30", "05:00"))  +
+                     labels = c("14.00", "16.50", "19.00", "21.50", "00.00", "02.50", "05.00"))  +
   theme_bw() +
   theme(plot.background = element_rect(fill = "transparent", colour = "transparent"),
         plot.margin = margin(.8, .8, .8, .6, "cm"),
@@ -662,20 +641,18 @@ violin
 rm(list = ls(all = TRUE)) 
 
 # Load dataset
-load("06_FinalDataset/ht2.Rda")
+load("~/Desktop/BodyTime_Final_Version/06_FinalDataset_2024/ht2.Rda")
 
-
-dup <- read.csv("06_FinalDataset/db_duplicate.csv") # 3949
+dup <- read.csv("~/Desktop/BodyTime_Final_Version/06_FinalDataset_2024//db_duplicate.csv") # 3949
 colnames(dup) <- c("index", "duplicates")
 
 # filter ht2 if ht2$id_s is in the dup$duplicates
 ht2 <- ht2[!(ht2$id_s %in% dup$duplicates), ] # 3593
 3949 - 3593
 
-
 # number of NA in ht2$employed
 sum(is.na(ht2$employed))
-ht2 <- ht2 %>% filter(!is.na(ht2$employed))
+ht2 <- ht2 %>% filter(!is.na(employed))
 
 # Load required libraries
 library(ggplot2)
@@ -778,19 +755,11 @@ jtools::summ(m1, digits = 3, confint = T)
 
 #### Conversion of Est. to minutes
 ```{r}
-convert_to_minutes <- function(coef_value) {
-  minutes <- coef_value * 60  # Convert hours to minutes
+  print(0.564 * 60)
+  minutes <- 0.564 * 60  # Convert hours to minutes
   seconds <- (minutes - floor(minutes)) * 60  # Extract remaining seconds
-  return(sprintf("%d min %d sec", floor(minutes), round(seconds)))
-}
+sprintf("%d min %d sec", floor(minutes), round(seconds))
 
-coefficients <- c(
-  employedNo = 0.564
-)
-# Apply the conversion function
-converted_times <- sapply(coefficients, convert_to_minutes)
-# Print results
-print(converted_times)
 ```
 
 ### Checking assumptions
@@ -826,7 +795,7 @@ mod_work <- ggplot() +
   xlab("Working") +
   scale_y_continuous("Predicted DLMO (hours)",
                      breaks = c(-3.75, -3.5, -3.25, -3, -2.75, -2.5),
-                     labels = c("20:00", "20:30", "20:45", "21:00", "21:15", "21:30"),
+                     labels = c("20.00", "20.50", "20.75", "21.00", "21.25", "21.50"),
                      limits = c(-3.8, -2.7)) +
   theme(plot.background = element_rect(fill = "transparent", colour = "transparent"),
         plot.margin = margin(.8, .8, .8, .6, "cm"),
@@ -859,8 +828,8 @@ violin <- ggplot(ht2, aes(x = employed, y = hair_time)) +
   scale_fill_manual(values = c("#6D93B0", "#B08A6D")) +
   xlab("Working") +
   scale_y_continuous("Predicted DLMO (hours)",
-                     breaks = c(-10, -7.5, -5, -2.5, 0, 2.5),
-                     labels = c("14:00", "16:30", "19:00", "21:30", "00:00", "02:30"))  +
+                     breaks = c(-10, -7.5, -5, -2.5, 0, 2.5, 5),
+                     labels = c("14.00", "16.50", "19.00", "21.50", "00.00", "02.50", "05.00"))  +
   theme_bw() +
   theme(plot.background = element_rect(fill = "transparent", colour = "transparent"),
         plot.margin = margin(.8, .8, .8, .6, "cm"),
@@ -892,20 +861,16 @@ rm(list = ls(all = TRUE))
 
 library(splines)
 
-load("06_FinalDataset/ht4.Rda")
+load("~/Desktop/BodyTime_Final_Version/06_FinalDataset_2024/ht4.Rda")
 
-dup <- read.csv("06_FinalDataset/db_duplicate.csv") # 1450
+dup <- read.csv("~/Desktop/BodyTime_Final_Version/06_FinalDataset_2024/db_duplicate.csv") # 1450
 colnames(dup) <- c("index", "duplicates")
 
 # filter ht2 if ht2$id_s is in the dup$duplicates
 ht4 <- ht4[!(ht4$id_s %in% dup$duplicates), ] # 1332
 1450 - 1332 # 118
 
-
 ht4$hair_time <- ifelse(ht4$hair_time > 13, ht4$hair_time -24, ht4$hair_time)
-
-
-
 
 
 # plot ----------------------------------------------------
@@ -923,7 +888,7 @@ distr4 <-
   theme_bw() +
   scale_y_continuous(name = "Distribution (counts)", 
                      breaks = seq(0, 500, 100),
-                     limits = c(0, 300)) +
+                     limits = c(0, 350)) +
   scale_x_continuous(limits = c(-12,12),
                      breaks = seq(-12,12,2),
                      labels = c("12:00","14:00", "16:00",
@@ -957,20 +922,18 @@ distr4
 
 ```{r}
 
-# ht4 <- ht4 %>% filter(workdays == 5) then sign
 t.test(ht4$hair_time~ht4$we_wd, var.equal = T) 
 t.test(ht4$hair_time~ht4$we_wd, var.equal = F)
 wilcox.test(ht4$hair_time~ht4$we_wd) # sign
-
 
 suppressMessages(library(circular))
 ht4$we_wd <- factor(ht4$we_wd, levels = c("wd", "we"), labels = c("Wed-Fri", "Sun"))
 
 # Extract numeric vectors for M and F
-wd<- ht4 %>% filter(we_wd == "Wed-Fri") %>% pull(hair_time)
+wd <- ht4 %>% filter(we_wd == "Wed-Fri") %>% pull(hair_time)
 we <- ht4 %>% filter(we_wd == "Sun") %>% pull(hair_time)
 
-# Perform t-test 
+# Perform t-test (check if ok)
 print(t.test(wd, we))
 
 # Convert hours to radians (since 24 hours = 2π radians)
@@ -998,7 +961,7 @@ watson.williams.test(list(wd_circ, we_circ))
 ### Model
 
 ```{r}
-m1 <- lm(hair_time ~  sex + bs(age) + we_wd, data = ht4) #%>% filter(employed == "Yes"))
+m1 <- lm(hair_time ~  sex + bs(age) + we_wd, data = ht4) 
 jtools::summ(m1, digits = 3, confint = T)
 
 
@@ -1012,19 +975,10 @@ eff_wdwe <- ggeffects::predict_response(m1, margin = "marginalmeans", terms = "w
 #### Conversion of Est. to minutes
 
 ```{r}
-convert_to_minutes <- function(coef_value) {
-  minutes <- coef_value * 60  # Convert hours to minutes
+  0.208 * 60 
+  minutes <- 0.208 * 60  # Convert hours to minutes
   seconds <- (minutes - floor(minutes)) * 60  # Extract remaining seconds
-  return(sprintf("%d min %d sec", floor(minutes), round(seconds)))
-}
-
-coefficients <- c(
-  we_wdSun = 0.208
-)
-# Apply the conversion function
-converted_times <- sapply(coefficients, convert_to_minutes)
-# Print results
-print(converted_times)
+  sprintf("%d min %d sec", floor(minutes), round(seconds))
 ```
 
 ### Checking assumptions
@@ -1061,7 +1015,7 @@ mod_sampling_date <- ggplot() +
   xlab("Sampling date") +
   scale_y_continuous("Predicted DLMO (hours)",
                      breaks = c(-4.0, -3.75, -3.5, -3.25, -3.0),
-                     labels = c("20:00", "20:15", "20:30", "20:45", "21:00"),
+                     labels = c("20.00", "20.25", "20.50", "20.75", "21.00"),
                      limits = c(-4.0, -2.95)) +
   theme(plot.background = element_rect(fill = "transparent", colour = "transparent"),
         plot.margin = margin(.8, .8, .8, .6, "cm"),
@@ -1096,7 +1050,7 @@ violin <- ggplot(ht4, aes(x = we_wd, y = hair_time)) +
   xlab("Sampling weekday") +
   scale_y_continuous("Predicted DLMO (hours)",
                      breaks = c(-10, -7.5, -5, -2.5, 0, 2.5, 5.0),
-                     labels = c("14:00", "16:30", "19:00", "21:30", "00:00", "02:30", "03:00"),
+                     labels = c("14.00", "16.50", "19.00", "21.50", "00.00", "02.50", "05.00"),
                      limits = c(-10, 5.1))  +
   theme_bw() +
   theme(plot.background = element_rect(fill = "transparent", colour = "transparent"),
@@ -1136,10 +1090,10 @@ library(plotrix)
 rm(list = ls(all = TRUE))
 
 # Load dataset and filter
-load("06_FinalDataset/ht2.Rda")
+load("~/Desktop/BodyTime_Final_Version/06_FinalDataset_2024/ht2.Rda")
 
 # removing duplicates
-dup <- read.csv("06_FinalDataset/db_duplicate.csv") # 3949
+dup <- read.csv("~/Desktop/BodyTime_Final_Version/06_FinalDataset_2024/db_duplicate.csv") # 3949
 colnames(dup) <- c("index", "duplicates")
 
 # filter ht2 if ht2$id_s is in the dup$duplicates
@@ -1233,24 +1187,25 @@ circlin.cor(theta = all_circ, x = ht2$workdays, rads = TRUE)
 m1 <- lm(hair_time ~ sex + bs(age) + bs(workdays), data = ht2)
 m2 <- lm(hair_time ~ sex + bs(age) + workdays, data = ht2)
 jtools::summ(m2, digits = 3, confint = T)
+jtools::summ(m1, digits = 3, confint = T)
+```
+
+#### BIC: 
+
+```{r}
+print(paste0("BIC for model 1 (workdays splines): ", BIC(m1)))
+print(paste0("BIC for model 2 (workdays linear): ", BIC(m2)))
+print("Selected: model 2")
 ```
 
 #### Conversion of Est. to minutes
 
 ```{r}
-convert_to_minutes <- function(coef_value) {
-  minutes <- coef_value * 60  # Convert hours to minutes
+0.121 * 60
+  minutes <- 0.121 * 60  # Convert hours to minutes
   seconds <- (minutes - floor(minutes)) * 60  # Extract remaining seconds
-  return(sprintf("%d min %d sec", floor(minutes), round(seconds)))
-}
+sprintf("%d min %d sec", floor(minutes), round(seconds))
 
-coefficients <- c(
-  workdays = -0.121
-)
-# Apply the conversion function
-converted_times <- sapply(coefficients, convert_to_minutes)
-# Print results
-print(converted_times)
 ```
 
 ### Checking assumptions
@@ -1258,13 +1213,6 @@ print(converted_times)
 ```{r, fig.width=8, fig.height=8}
 suppressMessages(library(performance))
 check_model(m2)
-```
-
-#### BIC: linear vs. spline model
-
-```{r}
-print(paste0("BIC for spline model: ", BIC(m1)))
-print(paste0("BIC for linear model: ", BIC(m2)))
 ```
 
 ### Plot
@@ -1317,9 +1265,9 @@ workdays_fig <- ggplot() +
   scale_x_continuous("Workdays", breaks = seq(0, 7, 1)) +
   scale_y_continuous("Predicted DLMO (hours)",
                      breaks = c(-4, -3.5, -3, -2.5, -2, -1.5, -1, -0.5, 0),
-                     labels = c("20:00", "20:30", "21:00",
-                                "21:30", "22:00", "22:30",
-                                "23:00", "23:30", "00:00"),
+                     labels = c("20.00", "20.50", "21.00",
+                                "21.50", "22.00", "22.50",
+                                "23.00", "23.50", "00.00"),
                      limits = c(-4, -0.6)) +
   theme(plot.background = element_rect(fill = "transparent", colour = "transparent"),
         plot.margin = margin(0.8, 0.8, 0.8, 0.6, "cm"),
