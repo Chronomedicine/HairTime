@@ -28,14 +28,12 @@ Hairtime (pDLMO) distribution is consistent across all datasets. However, we re-
 
 ```{r}
 rm(list = ls(all = TRUE))
-# I could not load the data from the Rda file, so I loaded the data from db_all.Rda
-load("/Users/arahjou/Desktop/BodyTime_Final_Version/06_FinalDataset_2024/ht1.Rda")
+
+load("~/Desktop/BodyTime_Final_Version/06_FinalDataset_2024/ht1.Rda")
 
 suppressMessages(library(ggplot2))
 suppressMessages(library(tidyverse))
 
-
-# hair time - h from midnight (circ plot option commented out in the end of script)
 ht1$hair_time <- ifelse(ht1$hair_time > 13, ht1$hair_time -24, ht1$hair_time)
 
 # plot 
@@ -142,7 +140,7 @@ distr
 
 ```{r}
 rm(list = ls(all = TRUE)) 
-load("/Users/arahjou/Desktop/BodyTime_Final_Version/06_FinalDataset_2024/ht2.Rda")
+load("~/Desktop/BodyTime_Final_Version/06_FinalDataset_2024/ht2.Rda")
 
 library(ggplot2)
 library(tidyverse)
@@ -299,39 +297,28 @@ print(paste("Time difference between young and old groups (minutes):", round(tim
 ```{r }
 
 library(splines)
-library(mgcv)
 m1 <- lm(hair_time ~  sex + age, data = ht2)
 m2 <- lm(hair_time ~  sex + bs(age), data = ht2)
-m3 <- lm(hair_time ~  sex + ns(age, df= 2), data = ht2)
-m4 <- gam(hair_time ~  sex + s(age), data = ht2)
+
 jtools::summ(m1, digits = 3, confint = T)
-print(rep("******************", 10))
 jtools::summ(m2, digits = 3, confint = T)
-print(rep("******************", 10))
-jtools::summ(m3, digits = 3, confint = T)
-print(rep("******************", 10))
-summary(m4, digits = 3, confint = T)
+
+```
+
+#### BIC: 
+
+```{r}
+print(paste0("BIC for model 1 (age linear): ", BIC(m1)))
+print(paste0("BIC for model 2 (age splines): ", BIC(m2)))
+print("Selected: model 2")
 ```
 
 ### Checking assumptions
 
 ```{r, fig.width=8, fig.height=8}
 suppressMessages(library(performance))
-check_model(m1)
-
+check_model(m2)
 ```
-
-#### BIC: linear vs. spline model
-
-```{r}
-print(paste0("BIC for spline model: ", BIC(m1)))
-print(paste0("BIC for linear model: ", BIC(m2)))
-print(paste0("BIC for linear model: ", BIC(m3)))
-print(paste0("BIC for linear model: ", BIC(m4)))
-```
-
-
-
 
 ### Plots
 
@@ -417,7 +404,7 @@ as_distr
 
 ```{r}
 rm(list = ls(all = TRUE)) 
-load("/Users/arahjou/Desktop/BodyTime_Final_Version/06_FinalDataset_2024/ht2.Rda")
+load("~/Desktop/BodyTime_Final_Version/06_FinalDataset_2024/ht2.Rda")
 
 library(ggplot2)
 library(tidyverse)
@@ -527,28 +514,10 @@ print((((-0.8551704 * 12 / 3.14159265359) + 24)-((-0.9232520 * 12 / 3.1415926535
 ### Model
 
 ```{r}
-# Build models
+# Build model
 m1 <- lm(hair_time ~ sex + bs(age), data = ht2)
 jtools::summ(m1, digits = 3, confint = T)
 
-```
-
-#### Converting Est. to minutes
-
-```{r}
-convert_to_minutes <- function(coef_value) {
-  minutes <- coef_value * 60  # Convert hours to minutes
-  seconds <- (minutes - floor(minutes)) * 60  # Extract remaining seconds
-  return(sprintf("%d min %d sec", floor(minutes), round(seconds)))
-}
-
-coefficients <- c(
-  sexF = -0.108
-)
-# Apply the conversion function
-converted_times <- sapply(coefficients, convert_to_minutes)
-# Print results
-print(converted_times)
 ```
 
 ### Checking assumptions
@@ -562,8 +531,10 @@ check_model(m1)
 ### Plot
 
 ```{r, warning=FALSE}
+
 library(emmeans)
 library(ggpubr)
+
 # Compute emmeans for pairwise comparisons
 emmeans_results <- emmeans(m1, ~ sex)
 pairwise_comparison <- contrast(emmeans_results, method = "pairwise")
@@ -657,7 +628,7 @@ violin
 rm(list = ls(all = TRUE)) 
 
 # Load dataset
-load("/Users/arahjou/Desktop/BodyTime_Final_Version/06_FinalDataset_2024/ht2.Rda")
+load("~/Desktop/BodyTime_Final_Version/06_FinalDataset_2024/ht2.Rda")
 
 # number of NA in ht2$employed
 sum(is.na(ht2$employed))
@@ -764,19 +735,11 @@ jtools::summ(m1, digits = 3, confint = T)
 
 #### Conversion of Est. to minutes
 ```{r}
-convert_to_minutes <- function(coef_value) {
-  minutes <- coef_value * 60  # Convert hours to minutes
+  print(0.564 * 60)
+  minutes <- 0.564 * 60  # Convert hours to minutes
   seconds <- (minutes - floor(minutes)) * 60  # Extract remaining seconds
-  return(sprintf("%d min %d sec", floor(minutes), round(seconds)))
-}
+sprintf("%d min %d sec", floor(minutes), round(seconds))
 
-coefficients <- c(
-  employedNo = 0.564
-)
-# Apply the conversion function
-converted_times <- sapply(coefficients, convert_to_minutes)
-# Print results
-print(converted_times)
 ```
 
 ### Checking assumptions
@@ -878,7 +841,7 @@ rm(list = ls(all = TRUE))
 
 library(splines)
 
-load("/Users/arahjou/Desktop/BodyTime_Final_Version/06_FinalDataset_2024/ht4.Rda")
+load("~/Desktop/BodyTime_Final_Version/06_FinalDataset_2024/ht4.Rda")
 
 ht4$hair_time <- ifelse(ht4$hair_time > 13, ht4$hair_time -24, ht4$hair_time)
 
@@ -932,20 +895,18 @@ distr4
 
 ```{r}
 
-# ht4 <- ht4 %>% filter(workdays == 5) then sign
 t.test(ht4$hair_time~ht4$we_wd, var.equal = T) 
 t.test(ht4$hair_time~ht4$we_wd, var.equal = F)
 wilcox.test(ht4$hair_time~ht4$we_wd) # sign
-
 
 suppressMessages(library(circular))
 ht4$we_wd <- factor(ht4$we_wd, levels = c("wd", "we"), labels = c("Wed-Fri", "Sun"))
 
 # Extract numeric vectors for M and F
-wd<- ht4 %>% filter(we_wd == "Wed-Fri") %>% pull(hair_time)
+wd <- ht4 %>% filter(we_wd == "Wed-Fri") %>% pull(hair_time)
 we <- ht4 %>% filter(we_wd == "Sun") %>% pull(hair_time)
 
-# Perform t-test 
+# Perform t-test (check if ok)
 print(t.test(wd, we))
 
 # Convert hours to radians (since 24 hours = 2π radians)
@@ -973,7 +934,7 @@ watson.williams.test(list(wd_circ, we_circ))
 ### Model
 
 ```{r}
-m1 <- lm(hair_time ~  sex + bs(age) + we_wd, data = ht4) #%>% filter(employed == "Yes"))
+m1 <- lm(hair_time ~  sex + bs(age) + we_wd, data = ht4) 
 jtools::summ(m1, digits = 3, confint = T)
 
 
@@ -987,19 +948,10 @@ eff_wdwe <- ggeffects::predict_response(m1, margin = "marginalmeans", terms = "w
 #### Conversion of Est. to minutes
 
 ```{r}
-convert_to_minutes <- function(coef_value) {
-  minutes <- coef_value * 60  # Convert hours to minutes
+  0.208 * 60 
+  minutes <- 0.208 * 60  # Convert hours to minutes
   seconds <- (minutes - floor(minutes)) * 60  # Extract remaining seconds
-  return(sprintf("%d min %d sec", floor(minutes), round(seconds)))
-}
-
-coefficients <- c(
-  we_wdSun = 0.208
-)
-# Apply the conversion function
-converted_times <- sapply(coefficients, convert_to_minutes)
-# Print results
-print(converted_times)
+  sprintf("%d min %d sec", floor(minutes), round(seconds))
 ```
 
 ### Checking assumptions
@@ -1111,7 +1063,7 @@ library(plotrix)
 rm(list = ls(all = TRUE))
 
 # Load dataset and filter
-load("/Users/arahjou/Desktop/BodyTime_Final_Version/06_FinalDataset_2024/ht2.Rda")
+load("~/Desktop/BodyTime_Final_Version/06_FinalDataset_2024/ht2.Rda")
 # replace person with ht2$age = 51.5 to 52
 ht2$age[ht2$age == 51.5] <- 52
 
@@ -1199,24 +1151,25 @@ circlin.cor(theta = all_circ, x = ht2$workdays, rads = TRUE)
 m1 <- lm(hair_time ~ sex + bs(age) + bs(workdays), data = ht2)
 m2 <- lm(hair_time ~ sex + bs(age) + workdays, data = ht2)
 jtools::summ(m2, digits = 3, confint = T)
+jtools::summ(m1, digits = 3, confint = T)
+```
+
+#### BIC: 
+
+```{r}
+print(paste0("BIC for model 1 (workdays splines): ", BIC(m1)))
+print(paste0("BIC for model 2 (workdays linear): ", BIC(m2)))
+print("Selected: model 2")
 ```
 
 #### Conversion of Est. to minutes
 
 ```{r}
-convert_to_minutes <- function(coef_value) {
-  minutes <- coef_value * 60  # Convert hours to minutes
+0.121 * 60
+  minutes <- 0.121 * 60  # Convert hours to minutes
   seconds <- (minutes - floor(minutes)) * 60  # Extract remaining seconds
-  return(sprintf("%d min %d sec", floor(minutes), round(seconds)))
-}
+sprintf("%d min %d sec", floor(minutes), round(seconds))
 
-coefficients <- c(
-  workdays = -0.121
-)
-# Apply the conversion function
-converted_times <- sapply(coefficients, convert_to_minutes)
-# Print results
-print(converted_times)
 ```
 
 ### Checking assumptions
@@ -1224,13 +1177,6 @@ print(converted_times)
 ```{r, fig.width=8, fig.height=8}
 suppressMessages(library(performance))
 check_model(m2)
-```
-
-#### BIC: linear vs. spline model
-
-```{r}
-print(paste0("BIC for spline model: ", BIC(m1)))
-print(paste0("BIC for linear model: ", BIC(m2)))
 ```
 
 ### Plot
@@ -1299,100 +1245,6 @@ workdays_fig <- ggplot() +
         axis.title.y = element_text(vjust = 3),
         legend.position = "bottom")
 workdays_fig
-
-```
-```{r}
-library(ggplot2)
-library(dplyr)
-library(ggeffects)
-library(jtools)
-library(splines)
-library(tibble)
-
-# Fit models
-m1 <- lm(hair_time ~ sex + bs(age) + bs(workdays), data = ht2)  # spline for workdays
-m2 <- lm(hair_time ~ sex + bs(age) + workdays, data = ht2)      # linear for workdays
-
-# Print BIC values
-print(paste0("BIC for spline model: ", BIC(m1)))
-print(paste0("BIC for linear model: ", BIC(m2)))
-
-# Predicted effects for workdays (spline model)
-eff_wd_spline <- ggeffects::predict_response(m1, margin = "marginalmeans", terms = "workdays")
-eff_wd_spline <- eff_wd_spline %>% rename(hair_time = predicted)
-
-# Raw means
-means <- ht2 %>%
-  group_by(workdays) %>%
-  summarise(
-    mean_age = mean(age),
-    se_hair_time = sd(hair_time) / sqrt(n()),
-    mean_hair_time = mean(hair_time),
-    n = n()
-  )
-means$x <- as.numeric(as.character(means$workdays))
-
-# Corrected hair_time
-wd_age <- ggeffects::predict_response(m1, margin = "marginalmeans", terms = "age[18:70]")
-wd_all <- ggeffects::predict_response(m1, margin = "marginalmeans", terms = c("age[18:70]", "sex"))
-
-# Convert wd_all safely and extract needed columns
-corr_wd <- as_tibble(wd_all) %>%
-  dplyr::select(x, group, predicted) %>%
-  rename(age = x, sex = group, predicted_hair_time = predicted)
-
-# Merge predictions with original data
-db <- merge(ht2, corr_wd, by = c("sex", "age"), all.x = TRUE)
-db$hair_time_corrected <- db$hair_time - db$predicted_hair_time +
-  wd_age$predicted[wd_age$x == round(mean(db$age))]
-
-# Compute corrected means
-means2 <- db %>%
-  group_by(workdays) %>%
-  summarise(
-    mean_age = mean(age),
-    se_hair_time = sd(hair_time_corrected) / sqrt(n()),
-    mean_hair_time = mean(hair_time_corrected),
-    n = n()
-  )
-means2$x <- as.numeric(as.character(means2$workdays))
-
-# Plot with spline prediction
-workdays_fig_spline <- ggplot() +
-  geom_point(data = means, aes(x = x, y = mean_hair_time),
-             color = "#a3bbbf", alpha = 0.5) +
-  geom_errorbar(data = means, aes(x = x, ymin = mean_hair_time - se_hair_time, ymax = mean_hair_time + se_hair_time),
-                linewidth = 0.3, width = 0.1, color = "#a3bbbf", alpha = 0.5) +
-  geom_point(data = means2, aes(x = x, y = mean_hair_time)) +
-  geom_errorbar(data = means2, aes(x = x, ymin = mean_hair_time - se_hair_time, ymax = mean_hair_time + se_hair_time),
-                linewidth = 0.3, width = 0.1) +
-  geom_text(data = means2, aes(label = n, x = workdays + 0.25, y = mean_hair_time + 0.35),
-            color = "#ff4d00") +
-  geom_line(data = eff_wd_spline, aes(x = x, y = hair_time), color = "#0072B2") +
-  geom_ribbon(data = eff_wd_spline, aes(x = x, ymin = conf.low, ymax = conf.high), alpha = 0.2) +
-  theme_bw() +
-  scale_x_continuous("Workdays", breaks = seq(0, 7, 1)) +
-  scale_y_continuous("Predicted DLMO (hours)",
-                     breaks = c(-4, -3.5, -3, -2.5, -2, -1.5, -1, -0.5, 0),
-                     labels = c("20.00", "20.50", "21.00",
-                                "21.50", "22.00", "22.50",
-                                "23.00", "23.50", "00.00"),
-                     limits = c(-4, -0.6)) +
-  theme(plot.background = element_rect(fill = "transparent", colour = "transparent"),
-        plot.margin = margin(0.8, 0.8, 0.8, 0.6, "cm"),
-        panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
-        axis.line = element_line(),
-        panel.grid.minor.y = element_blank(),
-        panel.grid = element_line(linewidth = 0.1),
-        axis.text = element_text(size = 10),
-        axis.title = element_text(size = 12, face = "bold"),
-        axis.title.x = element_text(vjust = -2),
-        axis.title.y = element_text(vjust = 3),
-        legend.position = "bottom")
-
-# Show plot
-workdays_fig_spline
-
 
 ```
 
