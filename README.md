@@ -21,11 +21,10 @@ doi: https://doi.org/10.1101/2025.03.07.641864
 ```
 HairTime/
 ├── README.md                       # This file
-├── HairTime.Rproj                  # RStudio project file
-├── All_20251125_rev.Rmd            # Main analysis
-├── All_20251125_rev.html           # Main analysis output
-├── All_nodup_20251125_rev.Rmd      # Sensitivity analysis
-└── All_nodup_20251125_rev.html     # Sensitivity analysis output
+├── All.Rmd                         # Main analysis
+├── All.html                        # Main analysis output
+├── All_nodup.Rmd                   # Sensitivity analysis
+└── All_nodup.html                  # Sensitivity analysis output
 ```
 
 ## Description
