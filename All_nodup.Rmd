@@ -1,0 +1,2093 @@
+---
+title: "Hair Time"
+author: "LKP & AR"
+date: "2026-02-04"
+output: 
+  html_document:
+    toc: yes
+    toc_depth: 3
+    number_sections: yes
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Initial note:
+
+Figure 4A is derived from Dataset 1  (n = 4531).
+Figures 4B, 4C, 5A, and 5C are based on Dataset 2 (n = 3949), while Figure 5B is generated from Dataset 3 (n = 1450).  
+Hairtime (pDLMO) distribution is consistent across all datasets. However, we re-plotted it to maintain a consistent structure across markdown sections and display the distribution of the sample from which each figure originates.
+
+# Figure 4A 
+
+## Distribution - linear 
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+rm(list = ls(all = TRUE))
+
+load("/Volumes/ALI_1TB/Projects/BodyTime/BodyTime_Final_Version/06_FinalDataset_2024/ht1.Rda")
+
+suppressMessages(library(ggplot2))
+suppressMessages(library(tidyverse))
+
+ht1$hair_time <- ifelse(ht1$hair_time > 13, ht1$hair_time -24, ht1$hair_time)
+
+# plot 
+
+mean = mean(ht1$hair_time)
+median = median(ht1$hair_time)
+print(paste0("Mean of hairtime: ", mean(ht1$hair_time)))
+print(paste0("Median of hairtime: ", median(ht1$hair_time)))
+distr <- 
+  ggplot() + 
+  geom_histogram(data = ht1, aes(x = hair_time),
+                 fill = "grey", color = "black", 
+                 breaks = seq(-12,12,.5),
+                 alpha = .5, linewidth = .1) +
+  scale_y_continuous(name = "Distribution (counts)", breaks = seq(0, 900, 150)) +
+  scale_x_continuous(limits = c(-12,12),
+                     breaks = seq(-12,12,2),
+                     labels = c("12:00","14:00", "16:00",
+                                "18:00","20:00", "22:00",
+                                "00:00",
+                                "02:00", "04:00", "06:00",
+                                "08:00", "10:00", "12:00"),
+                     name = "Predicted DLMO (hours)") +
+  geom_vline(xintercept = mean, color = "red", linetype = "dashed") +
+  geom_vline(xintercept = median, color = "blue", linetype = "dashed") +
+  # add annotation for vlines
+  annotate("text", x = mean+2, y = 800, label = "Mean", color = "red", size = 4) +
+  annotate("text", x = median-2, y = 800, label = "Median", color = "blue", size = 4) +
+  theme_bw()+
+  theme(plot.background = element_rect(fill = "transparent", colour = "transparent"),
+        legend.position = "none",
+        plot.margin = margin(.8, .8, .8, .6, "cm"),
+        panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
+        axis.line =  element_line(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid = element_line(linewidth = .1),
+        axis.text = element_text(size = 12),
+        axis.text.x = element_text(angle = 90, vjust = 0.5),
+        axis.title = element_text(size = 12, face = "bold"),
+        axis.title.x = element_text(vjust = -3),
+        axis.title.y = element_text(vjust = 3))
+distr
+```
+
+## Distribution - Circular
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+library(circular)
+library(ggplot2)
+
+# Convert hair_time from hours to radians (for circular calculation)
+ht_circular <- circular(ht1$hair_time * (2 * pi / 24), units = "radians", template = "clock24")
+
+# Calculate circular mean and median
+circular_mean_rad <- mean.circular(ht_circular)
+circular_median_rad <- median.circular(ht_circular)
+
+# Convert circular mean and median back to hours
+circular_mean_hour <- as.numeric(circular_mean_rad) * (24 / (2 * pi))
+circular_median_hour <- as.numeric(circular_median_rad) * (24 / (2 * pi))
+
+# Adjust the plot code to include circular mean and median
+distr <- 
+  ggplot() + 
+  geom_histogram(data = ht1, aes(x = hair_time),
+                 fill = "#66a1ff", color = "black", 
+                 breaks = seq(-12, 12, 0.5),
+                 alpha = 0.5, linewidth = 0.1) +
+  geom_vline(xintercept = circular_mean_hour, color = "red", linetype = "dashed") +
+  geom_vline(xintercept = circular_median_hour, color = "blue", linetype = "dashed") +
+  annotate("text", x = circular_mean_hour + 0.5, y = 800, 
+           label = "Circular Mean", color = "red", size = 3, vjust = 0, hjust = 0) +
+  annotate("text", x = circular_median_hour - 0.5, y = 750, 
+           label = "Circular Median", color = "blue", size = 3, vjust = 0, hjust = 1) +
+  scale_y_continuous(name = "Distribution (counts)", breaks = seq(0, 900, 150)) +
+  scale_x_continuous(limits = c(-12, 12),
+                     breaks = seq(-12, 12, 2),
+                     labels = c("12:00", "14:00", "16:00",
+                                "18:00", "20:00", "22:00",
+                                "24:00", "02:00", "04:00", "06:00",
+                                "08:00", "10:00", "")) +
+  coord_polar(start = pi) +  # Use coord_polar instead of coord_radial
+  theme_bw() +
+  theme(plot.background = element_rect(fill = "transparent", colour = "transparent"),
+        legend.position = "none",
+        plot.margin = margin(0.8, 0.8, 0.8, 0.6, "cm"),
+        panel.border = element_rect(color = "black", fill = NA, linewidth = 0.4),
+        axis.line = element_line(linewidth = 0.4),
+        panel.grid.minor.y = element_blank(),
+        panel.grid = element_line(linewidth = 0.1),
+        axis.text = element_text(size = 12),
+        axis.text.x = element_text(vjust = 0.5),
+        axis.title = element_text(size = 12, face = "bold"),
+        axis.title.x = element_text(vjust = -3),
+        axis.title.y = element_text(vjust = 3))
+
+distr
+
+```
+
+# Figure 4B
+
+## Distribution
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+rm(list = ls(all = TRUE)) 
+load("/Volumes/ALI_1TB/Projects/BodyTime/BodyTime_Final_Version/06_FinalDataset_2024/ht2.Rda")
+
+
+dup <- read.csv("/Volumes/ALI_1TB/Projects/BodyTime/BodyTime_Final_Version/06_FinalDataset_2024/db_duplicate.csv") # 3949
+colnames(dup) <- c("index", "duplicates")
+
+# filter ht2 if ht2$id_s is in the dup$duplicates
+ht2 <- ht2[!(ht2$id_s %in% dup$duplicates), ] # 3593
+3949 - 3593
+
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+
+# hair time around midnight
+ht2$hair_time <- ifelse(ht2$hair_time > 13, ht2$hair_time -24, ht2$hair_time)
+
+ht2$age_cat_label <- cut(ht2$age, breaks = seq(17,91,3), labels = seq(19, 90, 3))
+ht2$age_cat_label <- as.numeric(as.character(ht2$age_cat_label))
+ht2$age_cat_label[ht2$age_cat_label == 70] <- 68
+ht2$age_cat_label[ht2$age_cat_label == 67] <- 68
+
+
+ht2$age_cat <- cut(ht2$age, seq(17,71, 3))
+ht2$age_cat <- as.character(ht2$age_cat)
+ht2$age_cat[ht2$age_cat == "(68,71]"] <- "(65,70]"
+ht2$age_cat[ht2$age_cat == "(65,68]"] <- "(65,70]"
+
+# get dots 
+means <- ht2 %>% group_by(age_cat_label) %>% summarise(mean_age = mean(age),
+                                                       se_hair_time = plotrix::std.error(hair_time),
+                                                       mean_hair_time = mean(hair_time),
+                                                       n = n())
+
+means$x <- as.numeric(as.character(means$age_cat_label))
+means <- means %>% rename(hair_time = mean_hair_time)
+
+
+# first linear histogram to show distribution used to model (ht2)
+mean = mean(ht2$hair_time)
+median = median(ht2$hair_time)
+
+print(paste0("Mean of hairtime: ", mean(ht2$hair_time)))
+print(paste0("Median of hairtime: ", median(ht2$hair_time)))
+
+distr2 <- 
+  ggplot(ht2) +
+  geom_histogram(data = ht2, aes(x = hair_time),
+                 fill = "grey", color = "black", 
+                 breaks = seq(-12,12,.5),
+                 alpha = .5, linewidth = .1) +
+  theme_bw() +
+  scale_y_continuous(name = "Distribution (counts)", 
+                     breaks = seq(0, 500, 100)) +
+  scale_x_continuous(limits = c(-12,12),
+                     breaks = seq(-12,12,2),
+                     labels = c("12:00","14:00", "16:00",
+                                "18:00","20:00", "22:00",
+                                "00:00",
+                                "02:00", "04:00", "06:00",
+                                "08:00", "10:00", "12:00"),
+                     name = "Predicted DLMO (hours)") +
+  geom_vline(xintercept = mean, color = "red", linetype = "dashed") +
+  geom_vline(xintercept = median, color = "blue", linetype = "dashed") +
+  # add annotation for vlines
+  annotate("text", x = mean+1, y = 800, label = "Mean", color = "red", size = 3) +
+  annotate("text", x = median-1, y = 800, label = "Median", color = "blue", size = 3) +
+  theme_bw()+
+  theme(plot.background = element_rect(fill = "transparent", colour = "transparent"),
+        legend.position = "none",
+        plot.margin = margin(.8, .8, .8, .6, "cm"),
+        panel.border = element_rect(color = "black", fill = NA, linewidth = 1),  # Add this line
+        axis.line =  element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid = element_line(linewidth = .1),
+        axis.text = element_text(size = 12),
+        axis.text.x = element_text(angle = 90, vjust = 0.5),
+        axis.title = element_text(size = 12, face = "bold"),
+        axis.title.x = element_text(vjust = -3),
+        axis.title.y = element_text(vjust = 3)) 
+distr2
+```
+
+## Association between variables 
+
+### Tests
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+suppressMessages(library(circular))
+suppressMessages(library(CircStats))
+suppressMessages(library(dplyr))
+suppressMessages(library(Directional))
+suppressMessages(library(car))
+
+# Perform correlation test
+corr <- cor.test(log(ht2$age), ht2$hair_time)
+corr
+
+# Perform t-test
+median(ht2$age)
+ht2$age_group <- ifelse(ht2$age < median(ht2$age), "young", "old")
+
+t.test(ht2$hair_time ~ ht2$age_group, var.equal = F)
+```
+
+### Sensitivity analysis (circularity of pDLMO): circular-linear corr
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+suppressMessages(library(circular))
+suppressMessages(library(CircStats))
+suppressMessages(library(dplyr))
+suppressMessages(library(Directional))
+
+# Define younger and older groups based on median age
+median_age <- median(ht2$age, na.rm = TRUE)
+ht2$age_group <- ifelse(ht2$age < median_age, "young", "old")
+
+# Extract numeric vectors for young and old
+young <- ht2 %>% filter(age_group == "young") %>% pull(hair_time)
+old <- ht2 %>% filter(age_group == "old") %>% pull(hair_time)
+all <- ht2  %>% pull(hair_time)
+
+# Convert hours to radians (since 24 hours = 2π radians)
+young_rad <- young * (2 * pi / 24)
+old_rad <- old * (2 * pi / 24)
+all_rad <- all * (2 * pi / 24)
+
+# Ensure all values are within [0, 2π]
+young_rad <- (young_rad + 2 * pi) %% (2 * pi)
+old_rad <- (old_rad + 2 * pi) %% (2 * pi)
+all_rad <- (all_rad + 2 * pi) %% (2 * pi)
+
+# Convert to circular data
+young_circ <- circular(young_rad, units = "radians")
+old_circ <- circular(old_rad, units = "radians")
+all_circ <- circular(all_rad, units = "radians")
+
+# 1. Linear circular correlation
+circlin.cor(theta = all_circ, x = ht2$age, rads = TRUE)
+
+# 1. Perform Watson-Williams test for homogeneity of means
+ww_test <- watson.williams.test(list(young_circ, old_circ))
+print(ww_test)
+
+# 2. If concentration parameters differ, perform Rao's Spacing Test (uniformity)
+rao_test <- rao.spacing.test(c(young_circ, old_circ))
+print(rao_test)
+
+# 3. Non-parametric alternative (circular)
+watson_wheeler_test <- watson.wheeler.test(list(young_circ, old_circ))
+print(watson_wheeler_test)
+
+# 4. Convert circular mean differences back to hours for interpretability
+young_mean <- mean.circular(young_circ)
+old_mean <- mean.circular(old_circ)
+
+# Convert circular means from radians to hours
+young_time <- (young_mean * 12 / pi) + 24
+old_time <- (old_mean * 12 / pi) + 24
+
+# Calculate the difference in minutes
+time_diff_minutes <- (young_time - old_time) * 60
+print(paste("Time difference between young and old groups (minutes):", round(time_diff_minutes, 2)))
+```
+
+## Models
+
+### Regression (model A)
+
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+
+library(splines)
+m1 <- lm(hair_time ~  sex + age, data = ht2)
+m2 <- lm(hair_time ~  sex + bs(age), data = ht2)
+
+jtools::summ(m1, digits = 3, confint = T)
+jtools::summ(m2, digits = 3, confint = T)
+
+```
+
+#### BIC: 
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+print(paste0("BIC for model 1 (age linear): ", BIC(m1)))
+print(paste0("BIC for model 2 (age splines): ", BIC(m2)))
+print("Selected: model 2")
+```
+
+### Model assumptions
+
+```{r, suppressMessages = TRUE, warning=FALSE, fig.width=8, fig.height=8}
+suppressMessages(library(performance))
+check_model(m2)
+```
+
+### Plot
+
+```{r, suppressMessages = TRUE, warning=FALSE, fig.width=6, fig.height=4}
+library(ggplot2)
+# get lines ----------------------------------------------------
+
+eff_age <- ggeffects::predict_response(m2, margin = "marginalmeans", terms = "age")
+eff_sex <- ggeffects::predict_response(m2, margin = "marginalmeans", terms = "sex")
+eff <- ggeffects::predict_response(m2, margin = "marginalmeans", terms = c("age", "sex"))
+eff <- eff %>% rename(hair_time = predicted)
+eff_age <- eff_age %>% rename(hair_time = predicted)
+
+
+# get dots ----------------------------------------------------
+
+ht2$age_cat_label <- cut(ht2$age, breaks = seq(17,91,3),
+                         labels = seq(19, 90, 3))
+ht2$age_cat_label <- as.numeric(as.character(ht2$age_cat_label))
+ht2$age_cat_label[ht2$age_cat_label == 70] <- 68
+ht2$age_cat_label[ht2$age_cat_label == 67] <- 68
+
+
+ht2$age_cat <- cut(ht2$age, seq(17,71, 3))
+
+ht2$age_cat <- as.character(ht2$age_cat)
+ht2$age_cat[ht2$age_cat == "(68,71]"] <- "(65,70]"
+ht2$age_cat[ht2$age_cat == "(65,68]"] <- "(65,70]"
+
+# get dots 
+means <- ht2 %>% group_by(age_cat_label) %>% summarise(mean_age = mean(age),
+                                                        se_hair_time = plotrix::std.error(hair_time),
+                                                        mean_hair_time = mean(hair_time),
+                                                        n = n())
+
+means$x <- as.numeric(as.character(means$age_cat_label))
+means <- means %>% rename(hair_time = mean_hair_time)
+
+as_distr <- 
+  ggplot() +
+  geom_point(data = means, aes(x = x, 
+                               y = hair_time, 
+                               size = n), 
+             color = "grey75") +
+  geom_errorbar(data = means, aes(x = x, 
+                                  ymin = hair_time-se_hair_time,
+                                  ymax = hair_time+se_hair_time),
+                linewidth = .3, width = .4, color = "grey75") + 
+  geom_line(data = eff_age, aes(x = x, y = hair_time)) +
+  geom_ribbon(data = eff_age, aes(ymin = conf.low, 
+                                  ymax = conf.high,
+                                  x = x), alpha = .2) +
+  theme_bw() +
+  scale_x_continuous(name = "Age", breaks = seq(20, 80, 10)) +
+  scale_y_continuous("Predicted DLMO (hours)",
+                     breaks = c(-4,-3.5,-3, -2.5, -2),
+                     labels = c("20.00", "20.50",
+                                "21.00", "21.50", "22.00"),
+                     limits = c(-4, -2)) +
+  theme(plot.background = element_rect(fill = "transparent", colour = "transparent"),
+        plot.margin = margin(.8, .8, .8, .6, "cm"),
+        panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
+        axis.line =  element_line(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid = element_line(linewidth = .1),
+        axis.text = element_text(size = 10),
+        axis.title = element_text(size = 12, face = "bold"),
+        axis.title.x = element_text(vjust = -2),
+        axis.title.y = element_text(vjust = 3),
+        legend.position = c(1, 1),
+        legend.justification = c(1, 1)) +
+  scale_size(name = "Bin sample size", 
+             limits = c(80, 500), range = c(1,5),
+             breaks = c(100, 200, 300, 500)) 
+
+as_distr
+```
+
+### Sensitivity analysis (circularity of pDLMO): hair time using sine and cosine components
+     
+```{r, suppressMessages = TRUE, warning=FALSE}
+#rm(list = ls(all = TRUE)) 
+load("/Volumes/ALI_1TB/Projects/BodyTime/BodyTime_Final_Version/06_FinalDataset_2024/ht2.Rda")
+
+
+dup <- read.csv("/Volumes/ALI_1TB/Projects/BodyTime/BodyTime_Final_Version/06_FinalDataset_2024/db_duplicate.csv") # 3949
+colnames(dup) <- c("index", "duplicates")
+
+# filter ht2 if ht2$id_s is in the dup$duplicates
+ht2 <- ht2[!(ht2$id_s %in% dup$duplicates), ] # 3593
+3949 - 3593
+
+library(dplyr)
+library(ggplot2)
+library(splines)
+library(ggeffects) # The star of the show
+library(plotrix)   # For std.error
+
+# 1. Prepare Circular Data
+# Convert time (0-24) to Angle -> Sine/Cosine
+ht2$theta <- (ht2$hair_time %% 24) * (2*pi/24)
+ht2$sin_t <- sin(ht2$theta)
+ht2$cos_t <- cos(ht2$theta)
+
+# 2. Fit the Two Component Models
+# We use 'bs(age)' for the curve and 'sex' as a covariate
+m_sin <- lm(sin_t ~ bs(age) + sex, data = ht2)
+m_cos <- lm(cos_t ~ bs(age) + sex, data = ht2)
+
+
+# Get Sine predictions
+eff_sin <- predict_response(m_sin, terms = "age", margin = "marginalmeans")
+
+# Get Cosine predictions
+eff_cos <- predict_response(m_cos, terms = "age", margin = "marginalmeans")
+
+
+# Helper function to approximate SE from 95% CI
+get_se <- function(fit, upper) (upper - fit) / 1.96
+
+# Create a clean dataframe for the simulation
+sim_data <- data.frame(
+  age = eff_sin$x,
+  sin_fit = eff_sin$predicted,
+  sin_se  = get_se(eff_sin$predicted, eff_sin$conf.high),
+  cos_fit = eff_cos$predicted,
+  cos_se  = get_se(eff_cos$predicted, eff_cos$conf.high)
+)
+
+# Run the simulation (vectorized for speed)
+n_sims <- 1000
+results <- list()
+
+for(i in 1:nrow(sim_data)) {
+  # 1. Simulate distributions for Sin and Cos
+  s_sim <- rnorm(n_sims, sim_data$sin_fit[i], sim_data$sin_se[i])
+  c_sim <- rnorm(n_sims, sim_data$cos_fit[i], sim_data$cos_se[i])
+  
+  # 2. Convert to Time
+  angles <- atan2(s_sim, c_sim)
+  times  <- (angles %% (2*pi)) * 24/(2*pi)
+  
+  # 3. Handle Midnight Wrap (centering on Noon)
+  # If time < 12, add 24. This makes 01:00 become 25:00
+  times_shifted <- ifelse(times < 12, times + 24, times)
+  
+  # 4. Store stats
+  results[[i]] <- data.frame(
+    x = sim_data$age[i],
+    hair_time = mean(times_shifted),
+    conf.low  = quantile(times_shifted, 0.025),
+    conf.high = quantile(times_shifted, 0.975)
+  )
+}
+
+# Bind results into one final prediction frame
+eff_final <- do.call(rbind, results)
+
+ht2$age_cat_label <- cut(ht2$age, breaks = seq(17,91,3), labels = seq(19, 90, 3))
+ht2$age_cat_label <- as.numeric(as.character(ht2$age_cat_label))
+
+# Fix outliers
+ht2$age_cat_label[ht2$age_cat_label == 70] <- 68
+ht2$age_cat_label[ht2$age_cat_label == 67] <- 68
+
+# Shift Raw Data for Plotting (Noon to Noon)
+ht2$hair_time_shifted <- ifelse(ht2$hair_time < 12, ht2$hair_time + 24, ht2$hair_time)
+
+# Calculate Means
+means <- ht2 %>% 
+  group_by(age_cat_label) %>% 
+  summarise(
+    x = mean(age_cat_label),
+    mean_hair_time = mean(hair_time_shifted, na.rm=TRUE),
+    se_hair_time   = std.error(hair_time_shifted, na.rm=TRUE),
+    n = n()
+  ) %>% 
+  rename(hair_time = mean_hair_time)
+
+
+ggplot() +
+  # 1. Raw Data (Dots & Error Bars)
+  geom_errorbar(data = means, aes(x = x, 
+                                  ymin = hair_time - se_hair_time,
+                                  ymax = hair_time + se_hair_time),
+                linewidth = 0.3, width = 0.4, color = "grey75") +
+  
+  geom_point(data = means, aes(x = x, y = hair_time, size = n), 
+             color = "grey75") +
+  
+  # 2. Model Prediction (Ribbon & Line from our Simulation)
+  geom_ribbon(data = eff_final, aes(x = x, ymin = conf.low, ymax = conf.high), 
+              fill = "firebrick", alpha = 0.2) +
+  
+  geom_line(data = eff_final, aes(x = x, y = hair_time), 
+            color = "firebrick", linewidth = 1) +
+   
+  # 3. Styling
+  theme_bw() +
+  scale_x_continuous(name = "Age", breaks = seq(20, 80, 10)) +
+  
+  # Y-AXIS SCALE
+  scale_y_continuous("Predicted DLMO (hours)",
+                     breaks = c(20, 20.5, 21, 21.5, 22), 
+                     labels = c("20.00", "20.50", "21.00", "21.50", "22.00")) + # Close parenthesis here!
+  
+  # ZOOM LIMITS (Must be a separate layer)
+  coord_cartesian(ylim = c(20.05, 22.0)) +
+  
+  theme(
+    plot.background = element_rect(fill = "transparent", colour = NA),
+    panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
+    axis.title = element_text(size = 12, face = "bold"),
+    legend.position = c(1, 1),
+    legend.justification = c(1, 1)
+  ) +
+  
+  scale_size(name = "Bin sample size", range = c(1, 5))
+```
+
+# Figure 4C
+
+## Distribution
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+#rm(list = ls(all = TRUE)) 
+load("/Volumes/ALI_1TB/Projects/BodyTime/BodyTime_Final_Version/06_FinalDataset_2024/ht2.Rda")
+
+
+dup <- read.csv("/Volumes/ALI_1TB/Projects/BodyTime/BodyTime_Final_Version/06_FinalDataset_2024/db_duplicate.csv") # 3949
+colnames(dup) <- c("index", "duplicates")
+
+# filter ht2 if ht2$id_s is in the dup$duplicates
+ht2 <- ht2[!(ht2$id_s %in% dup$duplicates), ] # 3593
+3949 - 3593
+
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+
+# hair time around midnight
+ht2$hair_time <- ifelse(ht2$hair_time > 13, ht2$hair_time -24, ht2$hair_time)
+
+ht2$age_cat_label <- cut(ht2$age, breaks = seq(17,91,3), labels = seq(19, 90, 3))
+ht2$age_cat_label <- as.numeric(as.character(ht2$age_cat_label))
+ht2$age_cat_label[ht2$age_cat_label == 70] <- 68
+ht2$age_cat_label[ht2$age_cat_label == 67] <- 68
+
+
+ht2$age_cat <- cut(ht2$age, seq(17,71, 3))
+ht2$age_cat <- as.character(ht2$age_cat)
+ht2$age_cat[ht2$age_cat == "(68,71]"] <- "(65,70]"
+ht2$age_cat[ht2$age_cat == "(65,68]"] <- "(65,70]"
+
+# get dots 
+means <- ht2 %>% group_by(age_cat_label) %>% summarise(mean_age = mean(age),
+                                                       se_hair_time = plotrix::std.error(hair_time),
+                                                       mean_hair_time = mean(hair_time),
+                                                       n = n())
+
+means$x <- as.numeric(as.character(means$age_cat_label))
+means <- means %>% rename(hair_time = mean_hair_time)
+
+print(paste0("Mean of hairtime: ", mean(ht2$hair_time)))
+print(paste0("Median of hairtime: ", median(ht2$hair_time)))
+
+
+# first linear histogram to show distribution used to model (ht2)
+mean = mean(ht2$hair_time)
+median = median(ht2$hair_time)
+distr2 <- 
+  ggplot(ht2) +
+  geom_histogram(data = ht2, aes(x = hair_time),
+                 fill = "grey", color = "black", 
+                 breaks = seq(-12,12,.5),
+                 alpha = .5, linewidth = .1) +
+  theme_bw() +
+  scale_y_continuous(name = "Distribution (counts)", 
+                     breaks = seq(0, 500, 100)) +
+  scale_x_continuous(limits = c(-12,12),
+                     breaks = seq(-12,12,2),
+                     labels = c("12:00","14:00", "16:00",
+                                "18:00","20:00", "22:00",
+                                "00:00",
+                                "02:00", "04:00", "06:00",
+                                "08:00", "10:00", "12:00"),
+                     name = "Predicted DLMO (hours)") +
+  geom_vline(xintercept = mean, color = "red", linetype = "dashed") +
+  geom_vline(xintercept = median, color = "blue", linetype = "dashed") +
+  # add annotation for vlines
+  annotate("text", x = mean+1, y = 800, label = "Mean", color = "red", size = 3) +
+  annotate("text", x = median-1, y = 800, label = "Median", color = "blue", size = 3) +
+  theme_bw()+
+  theme(plot.background = element_rect(fill = "transparent", colour = "transparent"),
+        legend.position = "none",
+        plot.margin = margin(.8, .8, .8, .6, "cm"),
+        panel.border = element_rect(color = "black", fill = NA, linewidth = 1),  # Add this line
+        axis.line =  element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid = element_line(linewidth = .1),
+        axis.text = element_text(size = 12),
+        axis.text.x = element_text(angle = 90, vjust = 0.5),
+        axis.title = element_text(size = 12, face = "bold"),
+        axis.title.x = element_text(vjust = -3),
+        axis.title.y = element_text(vjust = 3)) 
+distr2
+```
+
+## Comparing groups 
+
+### Tests
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+library(car)
+# Extract numeric vectors for M and F
+m <- ht2 %>% filter(sex == "M") %>% pull(hair_time)
+f <- ht2 %>% filter(sex == "F") %>% pull(hair_time)
+
+# Perform t-test 
+print(t.test(m, f, val.equal=F))
+```
+
+### Plot
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+library(ggpubr)
+
+# Compute t-test for hair_time between sexes
+t_test_result <- t.test(ht2$hair_time ~ ht2$sex, var.equal = F)
+p_value_violin <- t_test_result$p.value
+
+# Create violin plot
+violin <- ggplot(ht2, aes(x = sex, y = hair_time)) + 
+  geom_violin(aes(color = sex, fill = sex)) +
+  geom_boxplot(color = "black", alpha = .5, width = .5) +
+  theme(legend.position = "none") +
+  scale_color_manual(values = c("#6fa8dc", "#d5a6bd")) +
+  scale_fill_manual(values = c("#6fa8dc", "#d5a6bd")) +
+  xlab("Sex") +
+  scale_y_continuous("Predicted DLMO (hours)",
+                     breaks = c(-10, -7.5, -5, -2.5, 0, 2.5, 5.0),
+                     labels = c("14.00", "16.50", "19.00", "21.50", "00.00", "02.50", "05.00"))  +
+  theme_bw() +
+  theme(plot.background = element_rect(fill = "transparent", colour = "transparent"),
+        plot.margin = margin(.8, .8, .8, .6, "cm"),
+        panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
+        legend.position = "none",
+        axis.line = element_line(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid = element_line(linewidth = .1),
+        axis.text = element_text(size = 10),
+        axis.title = element_text(size = 12, face = "bold"),
+        axis.title.x = element_text(vjust = -2),
+        axis.title.y = element_text(vjust = 3)) +
+  stat_pvalue_manual(
+    data = data.frame(group1 = "M", group2 = "F", 
+                      label = sprintf("p = %.3f", p_value_violin)),
+    y.position = 5,
+    size = 4
+  )
+
+violin
+```
+
+### Sensitivity analysis (circularity of pDLMO): Watson-Williams test (circular)
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+# Convert hours to radians (since 24 hours = 2π radians)
+m_rad <- m * (2 * pi / 24)
+f_rad <- f * (2 * pi / 24)
+ 
+# Ensure all values are within [0, 2π]
+m_rad <- (m_rad + 2 * pi) %% (2 * pi)
+f_rad <- (f_rad + 2 * pi) %% (2 * pi)
+ 
+# Convert to circular data
+m_circ <- circular(m_rad, units = "radians")
+f_circ <- circular(f_rad, units = "radians")
+ 
+# Perform Watson-Williams test
+watson.williams.test(list(m_circ, f_circ))
+ 
+print((-0.8551704 * 12 / 3.14159265359) + 24)
+print((-0.9232520 * 12 / 3.14159265359) + 24)
+ 
+print((((-0.8551704 * 12 / 3.14159265359) + 24)-((-0.9232520 * 12 / 3.14159265359) + 24)) * 60)
+
+
+```
+
+## Models
+
+### Regression (model A)
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+# Build model
+m1 <- lm(hair_time ~ sex + bs(age), data = ht2)
+jtools::summ(m1, digits = 3, confint = T)
+
+```
+
+### Model assumptions
+
+```{r, suppressMessages = TRUE, warning=FALSE, fig.width=8, fig.height=8}
+suppressMessages(library(performance))
+check_model(m1)
+
+```
+
+### Plot (estimated marginal means) 
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+
+library(emmeans)
+library(ggpubr)
+
+# Compute emmeans for pairwise comparisons
+emmeans_results <- emmeans(m1, ~ sex)
+pairwise_comparison <- contrast(emmeans_results, method = "pairwise")
+
+# Extract p-value
+p_value_sex <- summary(pairwise_comparison)$p.value
+
+# Get effect estimates for sex
+eff_sex <- ggeffects::predict_response(m1, margin = "marginalmeans", terms = "sex")
+
+# Create mod_sex plot
+mod_sex <- ggplot() +
+  geom_point(data = eff_sex, aes(x = x, y = predicted, color = x), size = 3) +
+  geom_errorbar(data = eff_sex, aes(x = x, ymin = conf.low, ymax = conf.high, color = x), 
+                linewidth = .4, width = .05) + 
+  theme_bw() +
+  xlab("Sex") +
+  scale_y_continuous("Predicted DLMO (hours)",
+                     breaks = c(-4.00, -3.75, -3.5, -3.25, -3),
+                     labels = c("19.00", "20.25", "20.50", "20.75", "21.00"),
+                     limits = c(-3.8, -3.2)) +  
+  theme(plot.background = element_rect(fill = "transparent", colour = "transparent"),
+        plot.margin = margin(.8, .8, .8, .6, "cm"),
+        panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
+        legend.position = "none",
+        axis.line = element_line(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid = element_line(linewidth = .1),
+        axis.text = element_text(size = 10),
+        axis.title = element_text(size = 12, face = "bold"),
+        axis.title.x = element_text(vjust = -2),
+        axis.title.y = element_text(vjust = 3)) +
+  scale_color_manual(values = c("#6fa8dc", "#d5a6bd"), name = "Working") +
+  scale_fill_manual(values = c("#6fa8dc", "#d5a6bd"), name = "Working") +
+  stat_pvalue_manual(
+    data = data.frame(x = "F", y = 4.5, group1 = "M", group2 = "F", 
+                      label = sprintf("p = %.3f", p_value_sex)),
+    y.position = -3.3,
+    size = 5
+  )
+
+mod_sex
+```
+
+### Sensitivity analysis (circularity of pDLMO): hair time using sine and cosine components 
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+#rm(list = ls(all = TRUE)) 
+load("/Volumes/ALI_1TB/Projects/BodyTime/BodyTime_Final_Version/06_FinalDataset_2024/ht2.Rda")
+
+dup <- read.csv("/Volumes/ALI_1TB/Projects/BodyTime/BodyTime_Final_Version/06_FinalDataset_2024/db_duplicate.csv") # 3949
+colnames(dup) <- c("index", "duplicates")
+
+# filter ht2 if ht2$id_s is in the dup$duplicates
+ht2 <- ht2[!(ht2$id_s %in% dup$duplicates), ] # 3593
+3949 - 3593
+
+library(dplyr)
+library(ggplot2)
+library(splines)
+library(ggeffects)
+library(ggpubr)
+library(emmeans)
+
+# hair time around midnight
+ht2$hair_time <- ifelse(ht2$hair_time > 13, ht2$hair_time -24, ht2$hair_time)
+
+# 1. Prepare Circular Data
+# Convert time (0-24) to Angle -> Sine/Cosine
+ht2$theta <- (ht2$hair_time %% 24) * (2*pi/24)
+ht2$sin_t <- sin(ht2$theta)
+ht2$cos_t <- cos(ht2$theta)
+
+# 2. Fit the Two Component Models
+m_sin <- lm(sin_t ~ bs(age) + sex, data = ht2)
+m_cos <- lm(cos_t ~ bs(age) + sex, data = ht2)
+
+# Get predictions for sex
+eff_sin_sex <- predict_response(m_sin, terms = "sex", margin = "marginalmeans")
+eff_cos_sex <- predict_response(m_cos, terms = "sex", margin = "marginalmeans")
+
+# Helper function to approximate SE from 95% CI
+get_se <- function(fit, upper) (upper - fit) / 1.96
+
+# Create a clean dataframe for the simulation
+sim_data_sex <- data.frame(
+  sex = eff_sin_sex$x,
+  sin_fit = eff_sin_sex$predicted,
+  sin_se  = get_se(eff_sin_sex$predicted, eff_sin_sex$conf.high),
+  cos_fit = eff_cos_sex$predicted,
+  cos_se  = get_se(eff_cos_sex$predicted, eff_cos_sex$conf.high)
+)
+
+# Run the simulation
+n_sims <- 1000
+results_sex <- list()
+
+for(i in 1:nrow(sim_data_sex)) {
+  s_sim <- rnorm(n_sims, sim_data_sex$sin_fit[i], sim_data_sex$sin_se[i])
+  c_sim <- rnorm(n_sims, sim_data_sex$cos_fit[i], sim_data_sex$cos_se[i])
+  
+  angles <- atan2(s_sim, c_sim)
+  times  <- (angles %% (2*pi)) * 24/(2*pi)
+  times_shifted <- ifelse(times < 12, times + 24, times)
+  
+  results_sex[[i]] <- data.frame(
+    x = sim_data_sex$sex[i],
+    hair_time = mean(times_shifted),
+    conf.low  = quantile(times_shifted, 0.025),
+    conf.high = quantile(times_shifted, 0.975)
+  )
+}
+
+eff_sex_final <- do.call(rbind, results_sex)
+
+# Compute p-value for circular model
+# Test both sin and cos components jointly using Hotelling's T-squared approach
+# Or use Wald test on both components
+emmeans_sin <- emmeans(m_sin, ~ sex)
+emmeans_cos <- emmeans(m_cos, ~ sex)
+
+# Get p-values from both components
+pairwise_sin <- contrast(emmeans_sin, method = "pairwise")
+pairwise_cos <- contrast(emmeans_cos, method = "pairwise")
+
+# For circular data, we need to test both components jointly
+# Simple approach: use the more conservative (larger) p-value
+p_value_sin <- summary(pairwise_sin)$p.value
+p_value_cos <- summary(pairwise_cos)$p.value
+
+# Use Bonferroni correction or take max (more conservative)
+p_value_circular_sex <- max(p_value_sin, p_value_cos)
+
+print(paste("Circular model - Sin component p-value:", p_value_sin))
+print(paste("Circular model - Cos component p-value:", p_value_cos))
+print(paste("Circular model - Combined p-value:", p_value_circular_sex))
+
+# Create plot
+mod_sex_circular <- ggplot() +
+  geom_point(data = eff_sex_final, aes(x = x, y = hair_time, color = x), size = 3) +
+  geom_errorbar(data = eff_sex_final, aes(x = x, ymin = conf.low, ymax = conf.high, color = x), 
+                linewidth = .4, width = .05) + 
+  theme_bw() +
+  xlab("Sex") +
+  scale_y_continuous("Predicted DLMO (hours)",
+                     breaks = c(20.25, 20.5, 20.75),
+                     labels = c("20.25", "20.50", "20.75")) +
+  coord_cartesian(ylim = c(20.2, 20.8)) +
+  theme(plot.background = element_rect(fill = "transparent", colour = "transparent"),
+        plot.margin = margin(.8, .8, .8, .6, "cm"),
+        panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
+        legend.position = "none",
+        axis.line = element_line(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid = element_line(linewidth = .1),
+        axis.text = element_text(size = 10),
+        axis.title = element_text(size = 12, face = "bold"),
+        axis.title.x = element_text(vjust = -2),
+        axis.title.y = element_text(vjust = 3)) +
+  scale_color_manual(values = c("#6fa8dc", "#d5a6bd"), name = "Sex") +
+  scale_fill_manual(values = c("#6fa8dc", "#d5a6bd"), name = "Sex") +
+  stat_pvalue_manual(
+    data = data.frame(x = "F", y = 4, group1 = "M", group2 = "F", 
+                      label = sprintf("p = %.3f", p_value_circular_sex)),
+    y.position = 20.75,
+    size = 5, tip_length = 0.02
+  )
+
+
+mod_sex_circular
+```
+
+# Figure 5A
+
+## Distribution
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+# Clear environment
+#rm(list = ls(all = TRUE)) 
+
+# Load dataset
+load("/Volumes/ALI_1TB/Projects/BodyTime/BodyTime_Final_Version/06_FinalDataset_2024/ht2.Rda")
+
+dup <- read.csv("/Volumes/ALI_1TB/Projects/BodyTime/BodyTime_Final_Version/06_FinalDataset_2024/db_duplicate.csv") # 3949
+colnames(dup) <- c("index", "duplicates")
+
+# filter ht2 if ht2$id_s is in the dup$duplicates
+ht2 <- ht2[!(ht2$id_s %in% dup$duplicates), ] # 3593
+3949 - 3593
+
+# number of NA in ht2$employed
+sum(is.na(ht2$employed))
+ht2 <- ht2 %>% filter(!is.na(employed))
+
+# Load required libraries
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(splines)
+library(ggpubr)
+library(emmeans)
+
+# Adjust hair_time
+ht2$hair_time <- ifelse(ht2$hair_time > 13, ht2$hair_time - 24, ht2$hair_time)
+
+# linear histogram to show distribution used to model
+# first linear histogram to show distribution used to model (ht2)
+mean = mean(ht2$hair_time)
+median = median(ht2$hair_time)
+
+print(paste0("Mean of hairtime: ", mean(ht2$hair_time)))
+print(paste0("Median of hairtime: ", median(ht2$hair_time)))
+
+distr2 <- 
+  ggplot(ht2) +
+  geom_histogram(data = ht2, aes(x = hair_time),
+                 fill = "grey", color = "black", 
+                 breaks = seq(-12,12,.5),
+                 alpha = .5, linewidth = .1) +
+  theme_bw() +
+  scale_y_continuous(name = "Distribution (counts)", 
+                     breaks = seq(0, 500, 100)) +
+  scale_x_continuous(limits = c(-12,12),
+                     breaks = seq(-12,12,2),
+                     labels = c("12:00","14:00", "16:00",
+                                "18:00","20:00", "22:00",
+                                "00:00",
+                                "02:00", "04:00", "06:00",
+                                "08:00", "10:00", "12:00"),
+                     name = "Hair Time (h)") +
+  geom_vline(xintercept = mean, color = "red", linetype = "dashed") +
+  geom_vline(xintercept = median, color = "blue", linetype = "dashed") +
+  # add annotation for vlines
+  annotate("text", x = mean+1, y = 800, label = "Mean", color = "red", size = 3) +
+  annotate("text", x = median-1, y = 800, label = "Median", color = "blue", size = 3) +
+  theme_bw()+
+  theme(plot.background = element_rect(fill = "transparent", colour = "transparent"),
+        legend.position = "none",
+        plot.margin = margin(.8, .8, .8, .6, "cm"),
+        panel.border = element_rect(color = "black", fill = NA, linewidth = 1),  # Add this line
+        axis.line =  element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid = element_line(linewidth = .1),
+        axis.text = element_text(size = 12),
+        axis.text.x = element_text(angle = 90, vjust = 0.5),
+        axis.title = element_text(size = 12, face = "bold"),
+        axis.title.x = element_text(vjust = -3),
+        axis.title.y = element_text(vjust = 3)) 
+distr2
+```
+
+## Comparing groups 
+
+### Testing
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+suppressMessages(library(circular))
+suppressMessages(library(car))
+# Extract numeric vectors for M and F
+em <- ht2 %>% filter(employed == "Yes") %>% pull(hair_time)
+nem <- ht2 %>% filter(employed == "No") %>% pull(hair_time)
+
+# Perform t-test 
+print(t.test(em, nem, var.equal = F))
+```
+
+### Plot 
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+# Create violin plot
+violin <- ggplot(ht2, aes(x = employed, y = hair_time)) + 
+  geom_violin(aes(color = employed, fill = employed)) +
+  geom_boxplot(color = "black", alpha = .5, width = .5) +
+  theme(legend.position = "none") +
+  scale_color_manual(values = c("#6D93B0", "#B08A6D")) +
+  scale_fill_manual(values = c("#6D93B0", "#B08A6D")) +
+  xlab("Working") +
+  scale_y_continuous("Predicted DLMO (hours)",
+                     breaks = c(-10, -7.5, -5, -2.5, 0, 2.5, 5),
+                     labels = c("14.00", "16.50", "19.00", "21.50", "00.00", "02.50", "05.00"))  +
+  theme_bw() +
+  theme(plot.background = element_rect(fill = "transparent", colour = "transparent"),
+        plot.margin = margin(.8, .8, .8, .6, "cm"),
+        panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
+        legend.position = "none",
+        axis.line =  element_line(linewidth = .4),
+        panel.grid.minor.y = element_blank(),
+        panel.grid = element_line(linewidth = .1),
+        axis.text = element_text(size = 10),
+        axis.title = element_text(size = 12, face = "bold"),
+        axis.title.x = element_text(vjust = -2),
+        axis.title.y = element_text(vjust = 3)) +
+  stat_pvalue_manual(
+    data = data.frame(group1 = "No", group2 = "Yes",
+                      label = sprintf("p = %.3f", p_value_violin)),
+    y.position = 5,
+    size = 4
+  )
+violin
+```
+
+### Sensitivity analysis (circularity of pDLMO): Watson-Williams test (circular) 
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+# Convert hours to radians (since 24 hours = 2π radians)
+em_rad <- em * (2 * pi / 24)
+nem_rad <- nem * (2 * pi / 24)
+ 
+# Ensure all values are within [0, 2π]
+em_rad <- (em_rad + 2 * pi) %% (2 * pi)
+nem_rad <- (nem_rad + 2 * pi) %% (2 * pi)
+ 
+# Convert to circular data
+em_circ <- circular(em_rad, units = "radians")
+nem_circ <- circular(nem_rad, units = "radians")
+ 
+# Perform Watson-Williams test
+watson.williams.test(list(em_circ, nem_circ))
+ 
+# print((-0.8551704 * 12 / 3.14159265359) + 24)
+# print((-0.9232520 * 12 / 3.14159265359) + 24)
+#  
+# print((((-0.8551704 * 12 / 3.14159265359) + 24)-((-0.9232520 * 12 / 3.14159265359) + 24)) * 60)
+```
+
+## Model
+
+### Regression (Model B)
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+# Build models
+m1 <- lm(hair_time ~ sex + bs(age) + employed, data = ht2)
+jtools::summ(m1, digits = 3, confint = T)
+```
+
+#### Conversion of Est. to minutes
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+  print(0.564 * 60)
+  minutes <- 0.564 * 60  # Convert hours to minutes
+  seconds <- (minutes - floor(minutes)) * 60  # Extract remaining seconds
+sprintf("%d min %d sec", floor(minutes), round(seconds))
+
+```
+
+### Model assumptions
+
+```{r, suppressMessages = TRUE, warning=FALSE, fig.width=8, fig.height=8}
+suppressMessages(library(performance))
+check_model(m1)
+
+```
+
+### Plot (estimated marginal means) 
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+# Compute emmeans for pairwise comparisons
+emmeans_results <- emmeans(m1, ~ employed)
+pairwise_comparison <- contrast(emmeans_results, method = "pairwise")
+
+# Extract p-value
+p_value_work <- summary(pairwise_comparison)$p.value
+
+# Compute t-test for hair_time between employment groups
+t_test_result <- t.test(ht2$hair_time ~ ht2$employed, var.equal = TRUE)
+p_value_violin <- t_test_result$p.value
+
+# Get effect estimates
+eff_empl <- ggeffects::predict_response(m1, margin = "marginalmeans", terms = "employed")
+
+# Create mod_work plot
+mod_work <- ggplot() +
+  geom_point(data = eff_empl, aes(x = x,  y = predicted, color = x), size = 3) +
+  geom_errorbar(data = eff_empl, aes(x = x, ymin = conf.low, ymax = conf.high, color = x),
+                linewidth = .4, width = .05) + 
+  theme_bw() +
+  xlab("Working") +
+  scale_y_continuous("Predicted DLMO (hours)",
+                     breaks = c(-3.75, -3.5, -3.25, -3, -2.75, -2.5),
+                     labels = c("20.25", "20.50", "20.75", "21.00", "21.25", "21.50"),
+                     limits = c(-3.8, -2.7)) +
+  theme(plot.background = element_rect(fill = "transparent", colour = "transparent"),
+        plot.margin = margin(.8, .8, .8, .6, "cm"),
+        panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
+        legend.position = "none",
+        axis.line =  element_line(linewidth = .4),
+        panel.grid.minor.y = element_blank(),
+        panel.grid = element_line(linewidth = .1),
+        axis.text = element_text(size = 10),
+        axis.title = element_text(size = 12, face = "bold"),
+        axis.title.x = element_text(vjust = -2),
+        axis.title.y = element_text(vjust = 3)) +
+  scale_color_manual(values = c("#6D93B0", "#B08A6D"), name = "Working") +
+  scale_fill_manual(values = c("#6D93B0", "#B08A6D"), name = "Working") +
+  stat_pvalue_manual(
+    data = data.frame(x = "Yes", y = 4.5, group1 = "No", group2 = "Yes",
+                      label = sprintf("p = %.3f", p_value_work)),
+    y.position = -2.75,
+    size = 6
+  )
+mod_work
+```
+
+### Sensitivity analysis (circularity of pDLMO): hair time using sine and cosine components 
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+#rm(list = ls(all = TRUE)) 
+load("/Volumes/ALI_1TB/Projects/BodyTime/BodyTime_Final_Version/06_FinalDataset_2024/ht2.Rda")
+
+dup <- read.csv("/Volumes/ALI_1TB/Projects/BodyTime/BodyTime_Final_Version/06_FinalDataset_2024/db_duplicate.csv") # 3949
+colnames(dup) <- c("index", "duplicates")
+
+# filter ht2 if ht2$id_s is in the dup$duplicates
+ht2 <- ht2[!(ht2$id_s %in% dup$duplicates), ] # 3593
+3949 - 3593
+
+library(dplyr)
+library(ggplot2)
+library(splines)
+library(ggeffects)
+library(ggpubr)
+library(emmeans)
+
+# Filter NA and adjust hair_time
+ht2 <- ht2 %>% filter(!is.na(employed))
+ht2$hair_time <- ifelse(ht2$hair_time > 13, ht2$hair_time -24, ht2$hair_time)
+
+# 1. Prepare Circular Data
+ht2$theta <- (ht2$hair_time %% 24) * (2*pi/24)
+ht2$sin_t <- sin(ht2$theta)
+ht2$cos_t <- cos(ht2$theta)
+
+# 2. Fit the Two Component Models
+m_sin <- lm(sin_t ~ bs(age) + sex + employed, data = ht2)
+m_cos <- lm(cos_t ~ bs(age) + sex + employed, data = ht2)
+
+# Get predictions for employed
+eff_sin_empl <- predict_response(m_sin, terms = "employed", margin = "marginalmeans")
+eff_cos_empl <- predict_response(m_cos, terms = "employed", margin = "marginalmeans")
+
+# Helper function to approximate SE from 95% CI
+get_se <- function(fit, upper) (upper - fit) / 1.96
+
+# Create simulation dataframe
+sim_data_empl <- data.frame(
+  employed = eff_sin_empl$x,
+  sin_fit = eff_sin_empl$predicted,
+  sin_se  = get_se(eff_sin_empl$predicted, eff_sin_empl$conf.high),
+  cos_fit = eff_cos_empl$predicted,
+  cos_se  = get_se(eff_cos_empl$predicted, eff_cos_empl$conf.high)
+)
+
+# Run simulation
+n_sims <- 1000
+results_empl <- list()
+
+for(i in 1:nrow(sim_data_empl)) {
+  s_sim <- rnorm(n_sims, sim_data_empl$sin_fit[i], sim_data_empl$sin_se[i])
+  c_sim <- rnorm(n_sims, sim_data_empl$cos_fit[i], sim_data_empl$cos_se[i])
+  
+  angles <- atan2(s_sim, c_sim)
+  times  <- (angles %% (2*pi)) * 24/(2*pi)
+  times_shifted <- ifelse(times < 12, times + 24, times)
+  
+  results_empl[[i]] <- data.frame(
+    x = sim_data_empl$employed[i],
+    hair_time = mean(times_shifted),
+    conf.low  = quantile(times_shifted, 0.025),
+    conf.high = quantile(times_shifted, 0.975)
+  )
+}
+
+eff_empl_final <- do.call(rbind, results_empl)
+
+# Compute p-value for circular model (employment effect)
+emmeans_sin <- emmeans(m_sin, ~ employed)
+emmeans_cos <- emmeans(m_cos, ~ employed)
+
+pairwise_sin <- contrast(emmeans_sin, method = "pairwise")
+pairwise_cos <- contrast(emmeans_cos, method = "pairwise")
+
+p_value_sin <- summary(pairwise_sin)$p.value
+p_value_cos <- summary(pairwise_cos)$p.value
+p_value_circular_empl <- max(p_value_sin, p_value_cos)
+
+print(paste("Circular model - Sin component p-value:", p_value_sin))
+print(paste("Circular model - Cos component p-value:", p_value_cos))
+print(paste("Circular model - Combined p-value:", p_value_circular_empl))
+
+# Create plot
+mod_work_circular <- ggplot() +
+  geom_point(data = eff_empl_final, aes(x = x, y = hair_time, color = x), size = 3) +
+  geom_errorbar(data = eff_empl_final, aes(x = x, ymin = conf.low, ymax = conf.high, color = x),
+                linewidth = .4, width = .05) + 
+  theme_bw() +
+  xlab("Working") +
+  scale_y_continuous("Predicted DLMO (hours)",
+                     breaks = c(20, 20.25, 20.5, 20.75, 21, 21.25),
+                     labels = c("20:00", "20.25", "20.50", "20.75", "21", "21.25")) +
+  coord_cartesian(ylim = c(20, 21.25)) +
+  theme(plot.background = element_rect(fill = "transparent", colour = "transparent"),
+        plot.margin = margin(.8, .8, .8, .6, "cm"),
+        panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
+        legend.position = "none",
+        axis.line =  element_line(linewidth = .4),
+        panel.grid.minor.y = element_blank(),
+        panel.grid = element_line(linewidth = .1),
+        axis.text = element_text(size = 10),
+        axis.title = element_text(size = 12, face = "bold"),
+        axis.title.x = element_text(vjust = -2),
+        axis.title.y = element_text(vjust = 3)) +
+  scale_color_manual(values = c("#6D93B0", "#B08A6D"), name = "Working") +
+  scale_fill_manual(values = c("#6D93B0", "#B08A6D"), name = "Working") +
+  stat_pvalue_manual(
+    data = data.frame(x = "Yes", y = 4.5, group1 = "No", group2 = "Yes",
+                      label = sprintf("p = %.3f", p_value_circular_empl)),
+    y.position = 21.15,
+    size = 6
+  )
+
+mod_work_circular
+```
+
+# Figure 5B
+
+## Distribution
+
+```{r,suppressMessages = TRUE, warning=FALSE}
+rm(list = ls(all = TRUE)) 
+
+library(splines)
+
+load("/Volumes/ALI_1TB/Projects/BodyTime/BodyTime_Final_Version/06_FinalDataset_2024/ht4.Rda")
+
+
+dup <- read.csv("/Volumes/ALI_1TB/Projects/BodyTime/BodyTime_Final_Version/06_FinalDataset_2024/db_duplicate.csv") # 3949
+colnames(dup) <- c("index", "duplicates")
+
+# filter ht2 if ht2$id_s is in the dup$duplicates
+ht4 <- ht4[!(ht4$id_s %in% dup$duplicates), ] # 3593
+3949 - 3593
+
+ht4$hair_time <- ifelse(ht4$hair_time > 13, ht4$hair_time -24, ht4$hair_time)
+
+
+# plot ----------------------------------------------------
+
+mean = mean(ht4$hair_time)
+median = median(ht4$hair_time)
+print(paste0("Mean of hairtime: ", mean(ht4$hair_time)))
+print(paste0("Median of hairtime: ", median(ht4$hair_time)))
+distr4 <- 
+  ggplot(ht4) +
+  geom_histogram(data = ht4, aes(x = hair_time),
+                 fill = "grey", color = "black", 
+                 breaks = seq(-12,12,.5),
+                 alpha = .5, linewidth = .1) +
+  theme_bw() +
+  scale_y_continuous(name = "Distribution (counts)", 
+                     breaks = seq(0, 500, 100),
+                     limits = c(0, 350)) +
+  scale_x_continuous(limits = c(-12,12),
+                     breaks = seq(-12,12,2),
+                     labels = c("12:00","14:00", "16:00",
+                                "18:00","20:00", "22:00",
+                                "00:00",
+                                "02:00", "04:00", "06:00",
+                                "08:00", "10:00", "12:00"),
+                     name = "Predicted DLMO (hours)") +
+  geom_vline(xintercept = mean, color = "red", linetype = "dashed") +
+  geom_vline(xintercept = median, color = "blue", linetype = "dashed") +
+  # add annotation for vlines
+  annotate("text", x = mean+1, y = 800, label = "Mean", color = "red", size = 3) +
+  annotate("text", x = median-1, y = 800, label = "Median", color = "blue", size = 3) +
+  theme_bw()+
+  theme(plot.background = element_rect(fill = "transparent", colour = "transparent"),
+        legend.position = "none",
+        plot.margin = margin(.8, .8, .8, .6, "cm"),
+        panel.border = element_rect(color = "black", fill = NA, linewidth = 1),  # Add this line
+        axis.line =  element_line(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid = element_line(linewidth = .1),
+        axis.text = element_text(size = 12),
+        axis.text.x = element_text(angle = 90, vjust = 0.5),
+        axis.title = element_text(size = 12, face = "bold"),
+        axis.title.x = element_text(vjust = -3),
+        axis.title.y = element_text(vjust = 3)) 
+distr4
+```
+
+## Comparing groups
+
+### Testing
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+suppressMessages(library(dplyr))
+
+# make sure groups are exactly what you want to compare/display
+ht4p <- ht4 %>%
+  mutate(
+    we_wd = factor(we_wd,
+                   levels = c("wd", "we"),
+                   labels = c("Wed-Fri", "Sun"))
+  )
+
+t.test(hair_time ~ we_wd, data = ht4p, var.equal = FALSE)
+wilcox.test(hair_time ~ we_wd, data = ht4p)
+```
+### Plot
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+suppressMessages(library(ggplot2))
+suppressMessages(library(ggpubr))
+suppressMessages(library(dplyr))
+
+ht4p <- ht4 %>%
+  mutate(
+    we_wd = factor(we_wd,
+                   levels = c("wd", "we"),
+                   labels = c("Wed-Fri", "Sun"))
+  )
+
+p_value_violin <- t.test(hair_time ~ we_wd, data = ht4p, var.equal = FALSE)$p.value
+
+pval_df <- data.frame(
+  group1 = "Wed-Fri",
+  group2 = "Sun",
+  y.position = 5.05,
+  label = sprintf("p = %.3f", p_value_violin)
+)
+
+violin <- ggplot(ht4p, aes(x = we_wd, y = hair_time, color = we_wd, fill = we_wd)) +
+  geom_violin(trim = FALSE) +
+  geom_boxplot(color = "black", alpha = .5, width = .25, outlier.shape = NA) +
+  theme(legend.position = "none") +
+  scale_color_manual(values = c("Wed-Fri" = "#6D93B0", "Sun" = "#B08A6D")) +
+  scale_fill_manual(values  = c("Wed-Fri" = "#6D93B0", "Sun" = "#B08A6D")) +
+  xlab("Sampling weekday") +
+  scale_y_continuous(
+    "Predicted DLMO (hours)",
+    breaks = c(-10, -7.5, -5, -2.5, 0, 2.5, 5.0),
+    labels = c("14.00", "16.50", "19.00", "21.50", "00.00", "02.50", "05.00"),
+    limits = c(-10, 5.1)
+  ) +
+  theme_bw() +
+  theme(
+    plot.background = element_rect(fill = "transparent", colour = "transparent"),
+    plot.margin = margin(.8, .8, .8, .6, "cm"),
+    panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
+    axis.line = element_line(),
+    panel.grid.minor.y = element_blank(),
+    panel.grid = element_line(linewidth = .1),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12, face = "bold"),
+    axis.title.x = element_text(vjust = -2),
+    axis.title.y = element_text(vjust = 3)
+  ) +
+  stat_pvalue_manual(
+    pval_df,
+    tip.length = 0.01,
+    size = 4
+  )
+
+violin
+```
+
+### Sensitivity analysis (circularity of pDLMO): Watson-Williams test (circular) 
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+suppressMessages(library(circular))
+ht4$we_wd <- factor(ht4$we_wd, levels = c("wd", "we"), labels = c("Wed-Fri", "Sun"))
+
+# Extract numeric vectors for M and F
+wd <- ht4 %>% filter(we_wd == "Wed-Fri") %>% pull(hair_time)
+we <- ht4 %>% filter(we_wd == "Sun") %>% pull(hair_time)
+
+# Perform t-test (check if ok)
+print(t.test(wd, we))
+
+# Convert hours to radians (since 24 hours = 2π radians)
+wd_rad <- wd * (2 * pi / 24)
+we_rad <- we * (2 * pi / 24)
+ 
+# Ensure all values are within [0, 2π]
+wd_rad <- (wd_rad + 2 * pi) %% (2 * pi)
+we_rad <- (we_rad + 2 * pi) %% (2 * pi)
+ 
+# Convert to circular data
+wd_circ <- circular(wd_rad, units = "radians")
+we_circ <- circular(we_rad, units = "radians")
+ 
+# Perform Watson-Williams test
+watson.williams.test(list(wd_circ, we_circ))
+ 
+# print((-0.8551704 * 12 / 3.14159265359) + 24)
+# print((-0.9232520 * 12 / 3.14159265359) + 24)
+#  
+# print((((-0.8551704 * 12 / 3.14159265359) + 24)-((-0.9232520 * 12 / 3.14159265359) + 24)) * 60)
+
+```
+
+## Model
+
+### Regression (Model C)
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+m1 <- lm(hair_time ~  sex + bs(age) + we_wd, data = ht4) 
+jtools::summ(m1, digits = 3, confint = T)
+
+
+# get effects ----------------------------------------------------
+
+eff_wdwe <- ggeffects::predict_response(m1, margin = "marginalmeans", terms = "we_wd")
+# -------------------------------------------------------------- # 
+
+```
+
+#### Conversion of Est. to minutes
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+  0.208 * 60 
+  minutes <- 0.208 * 60  # Convert hours to minutes
+  seconds <- (minutes - floor(minutes)) * 60  # Extract remaining seconds
+  sprintf("%d min %d sec", floor(minutes), round(seconds))
+```
+
+### Model assumptions
+
+```{r, suppressMessages = TRUE, warning=FALSE, fig.width=8, fig.height=8}
+suppressMessages(library(performance))
+check_model(m1)
+
+```
+
+### Plot (estimated marginal means) 
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+library(emmeans)
+# Compute emmeans for pairwise comparison
+emmeans_results <- emmeans(m1, ~ we_wd)
+pairwise_comparison <- contrast(emmeans_results, method = "pairwise")
+
+# Extract p-value
+p_value_weekday <- summary(pairwise_comparison)$p.value
+
+# Compute t-test for hair_time between weekday groups
+t_test_result <- t.test(ht4$hair_time ~ ht4$we_wd, var.equal = F)
+p_value_violin <- t_test_result$p.value
+
+# Get effect estimates
+eff_wdwe <- ggeffects::predict_response(m1, margin = "marginalmeans", terms = "we_wd")
+
+# Create mod_sampling_date plot
+mod_sampling_date <- ggplot() +
+  geom_point(data = eff_wdwe, aes(x = x, y = predicted, color = x), size = 3) +
+  geom_errorbar(data = eff_wdwe, aes(x = x, ymin = conf.low, ymax = conf.high, color = x),
+                linewidth = .4, width = .05) + 
+  theme_bw() +
+  xlab("Sampling date") +
+  scale_y_continuous("Predicted DLMO (hours)",
+                     breaks = c(-4.0, -3.75, -3.5, -3.25, -3.0),
+                     labels = c("20.00", "20.25", "20.50", "20.75", "21.00"),
+                     limits = c(-4.0, -2.95)) +
+  theme(plot.background = element_rect(fill = "transparent", colour = "transparent"),
+        plot.margin = margin(.8, .8, .8, .6, "cm"),
+        panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
+        legend.position = "none",
+        axis.line =  element_line(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid = element_line(linewidth = .1),
+        axis.text = element_text(size = 10),
+        axis.title = element_text(size = 12, face = "bold"),
+        axis.title.x = element_text(vjust = -2),
+        axis.title.y = element_text(vjust = 3)) +
+  scale_color_manual(values = c("#6D93B0", "#B08A6D"), name = "Sampling date") +
+  scale_fill_manual(values = c("#6D93B0", "#B08A6D"), name = "") +
+  stat_pvalue_manual(
+    data = data.frame(x = "Wed-Fri", y = 4, group1 = "Sun", group2 = "Wed-Fri",
+                      label = sprintf("p = %.3f", p_value_weekday)),
+    y.position = -3.25,
+    size = 6
+  )
+
+
+mod_sampling_date
+```
+
+### Sensitivity analysis (circularity of pDLMO): hair time using sine and cosine components 
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+#rm(list = ls(all = TRUE))
+load("/Volumes/ALI_1TB/Projects/BodyTime/BodyTime_Final_Version/06_FinalDataset_2024/ht4.Rda")
+
+dup <- read.csv("/Volumes/ALI_1TB/Projects/BodyTime/BodyTime_Final_Version/06_FinalDataset_2024/db_duplicate.csv") # 3949
+colnames(dup) <- c("index", "duplicates")
+
+# filter ht2 if ht2$id_s is in the dup$duplicates
+ht4 <- ht4[!(ht4$id_s %in% dup$duplicates), ] # 3593
+3949 - 3593
+
+library(dplyr)
+library(ggplot2)
+library(splines)
+library(ggeffects)
+library(ggpubr)
+library(emmeans)
+
+# Adjust hair_time and factor
+ht4$hair_time <- ifelse(ht4$hair_time > 13, ht4$hair_time -24, ht4$hair_time)
+ht4$we_wd <- factor(ht4$we_wd, levels = c("wd", "we"), labels = c("Wed-Fri", "Sun"))
+
+# 1. Prepare Circular Data
+ht4$theta <- (ht4$hair_time %% 24) * (2*pi/24)
+ht4$sin_t <- sin(ht4$theta)
+ht4$cos_t <- cos(ht4$theta)
+
+# 2. Fit the Two Component Models
+m_sin <- lm(sin_t ~ bs(age) + sex + we_wd, data = ht4)
+m_cos <- lm(cos_t ~ bs(age) + sex + we_wd, data = ht4)
+
+# Get predictions for we_wd
+eff_sin_wd <- predict_response(m_sin, terms = "we_wd", margin = "marginalmeans")
+eff_cos_wd <- predict_response(m_cos, terms = "we_wd", margin = "marginalmeans")
+
+# Helper function to approximate SE from 95% CI
+get_se <- function(fit, upper) (upper - fit) / 1.96
+
+# Create simulation dataframe
+sim_data_wd <- data.frame(
+  we_wd = eff_sin_wd$x,
+  sin_fit = eff_sin_wd$predicted,
+  sin_se  = get_se(eff_sin_wd$predicted, eff_sin_wd$conf.high),
+  cos_fit = eff_cos_wd$predicted,
+  cos_se  = get_se(eff_cos_wd$predicted, eff_cos_wd$conf.high)
+)
+
+# Run simulation
+n_sims <- 1000
+results_wd <- list()
+
+for(i in 1:nrow(sim_data_wd)) {
+  s_sim <- rnorm(n_sims, sim_data_wd$sin_fit[i], sim_data_wd$sin_se[i])
+  c_sim <- rnorm(n_sims, sim_data_wd$cos_fit[i], sim_data_wd$cos_se[i])
+  
+  angles <- atan2(s_sim, c_sim)
+  times  <- (angles %% (2*pi)) * 24/(2*pi)
+  times_shifted <- ifelse(times < 12, times + 24, times)
+  
+  results_wd[[i]] <- data.frame(
+    x = sim_data_wd$we_wd[i],
+    hair_time = mean(times_shifted),
+    conf.low  = quantile(times_shifted, 0.025),
+    conf.high = quantile(times_shifted, 0.975)
+  )
+}
+
+eff_wdwe_final <- do.call(rbind, results_wd)
+
+# Compute p-value for circular model (weekday effect)
+emmeans_sin <- emmeans(m_sin, ~ we_wd)
+emmeans_cos <- emmeans(m_cos, ~ we_wd)
+
+pairwise_sin <- contrast(emmeans_sin, method = "pairwise")
+pairwise_cos <- contrast(emmeans_cos, method = "pairwise")
+
+p_value_sin <- summary(pairwise_sin)$p.value
+p_value_cos <- summary(pairwise_cos)$p.value
+p_value_circular_wd <- max(p_value_sin, p_value_cos)
+
+print(paste("Circular model - Sin component p-value:", p_value_sin))
+print(paste("Circular model - Cos component p-value:", p_value_cos))
+print(paste("Circular model - Combined p-value:", p_value_circular_wd))
+
+# Create plot
+mod_sampling_date_circular <- ggplot() +
+  geom_point(data = eff_wdwe_final, aes(x = x, y = hair_time, color = x), size = 3) +
+  geom_errorbar(data = eff_wdwe_final, aes(x = x, ymin = conf.low, ymax = conf.high, color = x),
+                linewidth = .4, width = .05) + 
+  theme_bw() +
+  xlab("Sampling date") +
+  scale_y_continuous("Predicted DLMO (hours)",
+                     breaks = c(20, 20.25, 20.5, 20.75, 21),
+                     labels = c("20.00", "20.25", "20.50", "20.75", "21.00")) +
+  coord_cartesian(ylim = c(20, 21)) +
+  theme(plot.background = element_rect(fill = "transparent", colour = "transparent"),
+        plot.margin = margin(.8, .8, .8, .6, "cm"),
+        panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
+        legend.position = "none",
+        axis.line =  element_line(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid = element_line(linewidth = .1),
+        axis.text = element_text(size = 10),
+        axis.title = element_text(size = 12, face = "bold"),
+        axis.title.x = element_text(vjust = -2),
+        axis.title.y = element_text(vjust = 3)) +
+  scale_color_manual(values = c("#6D93B0", "#B08A6D"), name = "Sampling date") +
+  scale_fill_manual(values = c("#6D93B0", "#B08A6D"), name = "Sampling date") +
+  stat_pvalue_manual(
+    data = data.frame(x = "Wed-Fri", y = 4, group1 = "Sun", group2 = "Wed-Fri",
+                      label = sprintf("p = %.3f", p_value_circular_wd)),
+    y.position = 20.75,
+    size = 6
+  )
+
+mod_sampling_date_circular
+```
+
+# Figure 5C
+
+## Distribution
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+# Load necessary libraries
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(splines)
+library(ggpubr)
+library(ggeffects)
+library(plotrix)
+# Clear environment
+rm(list = ls(all = TRUE))
+
+# Load dataset and filter
+load("/Volumes/ALI_1TB/Projects/BodyTime/BodyTime_Final_Version/06_FinalDataset_2024/ht2.Rda")
+
+dup <- read.csv("/Volumes/ALI_1TB/Projects/BodyTime/BodyTime_Final_Version/06_FinalDataset_2024/db_duplicate.csv") # 3949
+colnames(dup) <- c("index", "duplicates")
+
+# filter ht2 if ht2$id_s is in the dup$duplicates
+ht2 <- ht2[!(ht2$id_s %in% dup$duplicates), ] # 3593
+3949 - 3593
+
+# replace person with ht2$age = 51.5 to 52
+ht2$age[ht2$age == 51.5] <- 52
+
+# Adjust hair_time (for values > 13)
+ht2$hair_time <- ifelse(ht2$hair_time > 13, ht2$hair_time - 24, ht2$hair_time)
+
+#---------------------- Distribution Plot ----------------------#
+mean_val <- mean(ht2$hair_time)
+median_val <- median(ht2$hair_time)
+print(paste0("Mean of hairtime: ", mean(ht2$hair_time)))
+print(paste0("Median of hairtime: ", median(ht2$hair_time)))
+
+distr2 <- ggplot(ht2) +
+  geom_histogram(aes(x = hair_time),
+                 fill = "grey", color = "black", 
+                 breaks = seq(-12, 12, 0.5),
+                 alpha = 0.5, linewidth = 0.1) +
+  theme_bw() +
+  scale_y_continuous(name = "Distribution (counts)", breaks = seq(0, 500, 100)) +
+  scale_x_continuous(limits = c(-12, 12),
+                     breaks = seq(-12, 12, 2),
+                     labels = c("12:00","14:00", "16:00",
+                                "18:00","20:00", "22:00",
+                                "00:00","02:00", "04:00", "06:00",
+                                "08:00", "10:00", "12:00"),
+                     name = "Predicted DLMO (hours)") +
+  geom_vline(xintercept = mean_val, color = "red", linetype = "dashed") +
+  geom_vline(xintercept = median_val, color = "blue", linetype = "dashed") +
+  annotate("text", x = mean_val + 1, y = 800, label = "Mean", color = "red", size = 3) +
+  annotate("text", x = median_val - 1, y = 800, label = "Median", color = "blue", size = 3) +
+  theme(plot.background = element_rect(fill = "transparent", colour = "transparent"),
+        legend.position = "none",
+        plot.margin = margin(0.8, 0.8, 0.8, 0.6, "cm"),
+        panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
+        axis.line = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid = element_line(linewidth = 0.1),
+        axis.text = element_text(size = 12),
+        axis.text.x = element_text(angle = 90, vjust = 0.5),
+        axis.title = element_text(size = 12, face = "bold"),
+        axis.title.x = element_text(vjust = -3),
+        axis.title.y = element_text(vjust = 3))
+distr2
+```
+## Association between variables 
+
+### Tests
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+suppressMessages(library(circular))
+suppressMessages(library(CircStats))
+suppressMessages(library(dplyr))
+
+cor.test(ht2$workdays, ht2$hair_time, method="pearson")
+
+```
+
+### Sensitivity analysis (circularity of pDLMO): circular-linear corr
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+all <- ht2  %>% pull(hair_time)
+
+# Convert hours to radians (since 24 hours = 2π radians)
+all_rad <- all * (2 * pi / 24)
+
+# Ensure all values are within [0, 2π]
+all_rad <- (all_rad + 2 * pi) %% (2 * pi)
+
+# Convert to circular data
+all_circ <- circular(all_rad, units = "radians")
+
+# 1. Linear circular correlation
+circlin.cor(theta = all_circ, x = ht2$workdays, rads = TRUE)
+
+```
+
+## Models
+
+### Regression (model D)
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+# Fit model (using workdays as predictor)
+m1 <- lm(hair_time ~ sex + bs(age) + bs(workdays), data = ht2)
+m2 <- lm(hair_time ~ sex + bs(age) + workdays, data = ht2)
+jtools::summ(m2, digits = 3, confint = T)
+jtools::summ(m1, digits = 3, confint = T)
+```
+
+#### BIC: 
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+print(paste0("BIC for model 1 (workdays splines): ", BIC(m1)))
+print(paste0("BIC for model 2 (workdays linear): ", BIC(m2)))
+print("Selected: model 2")
+```
+
+#### Conversion of Est. to minutes
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+0.121 * 60
+  minutes <- 0.121 * 60  # Convert hours to minutes
+  seconds <- (minutes - floor(minutes)) * 60  # Extract remaining seconds
+sprintf("%d min %d sec", floor(minutes), round(seconds))
+
+```
+
+### Model assumptions
+
+```{r, suppressMessages = TRUE, warning=FALSE, fig.width=8, fig.height=8}
+suppressMessages(library(performance))
+check_model(m2)
+```
+
+### Plot
+ 
+```{r, suppressMessages = TRUE, warning=FALSE}
+# Predicted effects for workdays
+eff_wd <- ggeffects::predict_response(m2, margin = "marginalmeans", terms = "workdays")
+eff_wd <- eff_wd %>% rename(hair_time = predicted)
+
+# Compute means by workdays (for raw hair_time)
+means <- ht2 %>% group_by(workdays) %>% 
+  summarise(mean_age = mean(age),
+            se_hair_time = std.error(hair_time),
+            mean_hair_time = mean(hair_time),
+            n = n())
+means$x <- as.numeric(as.character(means$workdays))
+
+# For adjusted dots: correct hair_time using model predictions
+wd_age <- ggeffects::predict_response(m2, margin = "marginalmeans", terms = "age[18:70]")
+wd_all <- ggeffects::predict_response(m2, margin = "marginalmeans", terms = c("age[18:70]", "sex"))
+wd_all <- as.data.frame(wd_all)
+corr_wd <- wd_all %>% dplyr::select(x, group, predicted)
+colnames(corr_wd) <- c("age", "sex", "predicted_hair_time")
+
+db <- merge(ht2, corr_wd, by = c("sex", "age"), all.x = TRUE)
+db$hair_time_corrected <- db$hair_time - db$predicted_hair_time +
+  wd_age$predicted[wd_age$x == round(mean(db$age))]
+
+means2 <- db %>% group_by(workdays) %>% 
+  summarise(mean_age = mean(age),
+            se_hair_time = std.error(hair_time_corrected),
+            mean_hair_time = mean(hair_time_corrected),
+            n = n())
+means2$x <- as.numeric(as.character(means2$workdays))
+
+# Build workdays figure
+workdays_fig <- ggplot() +
+  geom_point(data = means, aes(x = x, y = mean_hair_time),
+             color = "#a3bbbf", alpha = 0.5) +
+  geom_errorbar(data = means, aes(x = x, ymin = mean_hair_time - se_hair_time, ymax = mean_hair_time + se_hair_time),
+                linewidth = 0.3, width = 0.1, color = "#a3bbbf", alpha = 0.5) +
+  geom_point(data = means2, aes(x = x, y = mean_hair_time)) +
+  geom_errorbar(data = means2, aes(x = x, ymin = mean_hair_time - se_hair_time, ymax = mean_hair_time + se_hair_time),
+                linewidth = 0.3, width = 0.1) +
+  geom_text(data = means2, aes(label = n, x = workdays + 0.25, y = mean_hair_time + 0.35),
+            color = "#ff4d00") +
+  geom_line(data = eff_wd, aes(x = x, y = hair_time)) +
+  geom_ribbon(data = eff_wd, aes(x = x, ymin = conf.low, ymax = conf.high), alpha = 0.2) +
+  theme_bw() +
+  scale_x_continuous("Workdays", breaks = seq(0, 7, 1)) +
+  scale_y_continuous("Predicted DLMO (hours)",
+                     breaks = c(-4, -3.5, -3, -2.5, -2, -1.5, -1, -0.5, 0),
+                     labels = c("20.00", "20.50", "21.00",
+                                "21.50", "22.00", "22.50",
+                                "23.00", "23.50", "00.00"),
+                     limits = c(-4, -0.6)) +
+  theme(plot.background = element_rect(fill = "transparent", colour = "transparent"),
+        plot.margin = margin(0.8, 0.8, 0.8, 0.6, "cm"),
+        panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
+        axis.line = element_line(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid = element_line(linewidth = 0.1),
+        axis.text = element_text(size = 10),
+        axis.title = element_text(size = 12, face = "bold"),
+        axis.title.x = element_text(vjust = -2),
+        axis.title.y = element_text(vjust = 3),
+        legend.position = "bottom")
+workdays_fig
+
+```
+
+### Model D comparison: Linear vs Circular pDLMO
+
+```{r, suppressMessages = TRUE, warning=FALSE}
+# =========================================================
+# 0. Load Data & Libraries
+# =========================================================
+
+rm(list = ls(all = TRUE))
+
+load("/Volumes/ALI_1TB/Projects/BodyTime/BodyTime_Final_Version/06_FinalDataset_2024/ht2.Rda")
+
+
+dup <- read.csv("/Volumes/ALI_1TB/Projects/BodyTime/BodyTime_Final_Version/06_FinalDataset_2024/db_duplicate.csv") # 3949
+colnames(dup) <- c("index", "duplicates")
+
+# filter ht2 if ht2$id_s is in the dup$duplicates
+ht2 <- ht2[!(ht2$id_s %in% dup$duplicates), ] # 3593
+3949 - 3593
+
+library(dplyr)
+library(ggplot2)
+library(splines)
+library(ggeffects)
+library(plotrix)
+
+# =========================================================
+# 1. Prepare Circular Data
+# =========================================================
+
+# Fix one age value so merging works
+ht2$age[ht2$age == 51.5] <- 52
+
+# Convert hair_time to -12..12 scale
+ht2$hair_time <- ifelse(ht2$hair_time > 13, ht2$hair_time - 24, ht2$hair_time)
+
+# Convert to circular representation
+ht2$theta <- (ht2$hair_time %% 24) * (2*pi/24)
+ht2$sin_t <- sin(ht2$theta)
+ht2$cos_t <- cos(ht2$theta)
+
+# Shifted time for plotting (20–24 style)
+ht2$hair_time_shifted <- ifelse(ht2$hair_time < 12,
+                                ht2$hair_time + 24,
+                                ht2$hair_time)
+
+# =========================================================
+# 2. Fit Circular Models (sin & cos components)
+# =========================================================
+
+m_sin <- lm(sin_t ~ bs(age) + sex + workdays, data = ht2)
+m_cos <- lm(cos_t ~ bs(age) + sex + workdays, data = ht2)
+
+# =========================================================
+# 3. Helper: Convert sin/cos → clock time
+# =========================================================
+
+sin_cos_to_time <- function(s, c) {
+  ang <- atan2(s, c)
+  t <- (ang %% (2*pi)) * 24/(2*pi)
+  ifelse(t < 12, t + 24, t)
+}
+
+# =========================================================
+# 4. MODEL PREDICTIONS FOR WORKDAYS (red curve)
+# =========================================================
+
+eff_sin_wd <- predict_response(m_sin, terms = "workdays", margin = "marginalmeans")
+eff_cos_wd <- predict_response(m_cos, terms = "workdays", margin = "marginalmeans")
+
+get_se <- function(fit, upper) (upper - fit) / 1.96
+
+sim_data <- data.frame(
+  workdays = eff_sin_wd$x,
+  sin_fit = eff_sin_wd$predicted,
+  sin_se  = get_se(eff_sin_wd$predicted, eff_sin_wd$conf.high),
+  cos_fit = eff_cos_wd$predicted,
+  cos_se  = get_se(eff_cos_wd$predicted, eff_cos_wd$conf.high)
+)
+
+# Monte-Carlo simulation to propagate circular uncertainty
+n_sims <- 1000
+results <- list()
+
+for(i in 1:nrow(sim_data)) {
+  
+  s_sim <- rnorm(n_sims, sim_data$sin_fit[i], sim_data$sin_se[i])
+  c_sim <- rnorm(n_sims, sim_data$cos_fit[i], sim_data$cos_se[i])
+  
+  times <- sin_cos_to_time(s_sim, c_sim)
+  
+  results[[i]] <- data.frame(
+    x = sim_data$workdays[i],
+    hair_time = mean(times),
+    conf.low = quantile(times, 0.025),
+    conf.high = quantile(times, 0.975)
+  )
+}
+
+eff_wd_final <- do.call(rbind, results)
+
+# =========================================================
+# 5. RAW MEANS PER WORKDAYS (faded dots)
+# =========================================================
+
+means <- ht2 %>%
+  group_by(workdays) %>%
+  summarise(
+    mean_age = mean(age),
+    se_hair_time = std.error(hair_time_shifted),
+    mean_hair_time = mean(hair_time_shifted),
+    n = n()
+  )
+
+means$x <- as.numeric(as.character(means$workdays))
+
+# =========================================================
+# 6. AGE+SEX ADJUSTED VALUES (solid dots)
+# =========================================================
+
+# Get prediction grid across age & sex
+wd_all_sin <- predict_response(m_sin, terms = c("age[18:70]", "sex"),
+                               margin = "marginalmeans") %>% as.data.frame()
+
+wd_all_cos <- predict_response(m_cos, terms = c("age[18:70]", "sex"),
+                               margin = "marginalmeans") %>% as.data.frame()
+
+corr_sin <- wd_all_sin %>% dplyr::select(x, group, predicted)
+colnames(corr_sin) <- c("age","sex","pred_sin")
+
+corr_cos <- wd_all_cos %>% dplyr::select(x, group, predicted)
+colnames(corr_cos) <- c("age","sex","pred_cos")
+
+corr <- merge(corr_sin, corr_cos, by = c("age","sex"))
+
+# Merge predictions into dataset
+db <- merge(ht2, corr, by = c("sex","age"), all.x = TRUE)
+
+# Compute predicted circular time per row
+db$pred_time <- sin_cos_to_time(db$pred_sin, db$pred_cos)
+
+# Reference time at mean age
+wd_age_sin <- predict_response(m_sin, terms = "age[18:70]", margin = "marginalmeans")
+wd_age_cos <- predict_response(m_cos, terms = "age[18:70]", margin = "marginalmeans")
+
+ref_age <- round(mean(db$age))
+ref_time <- sin_cos_to_time(
+  wd_age_sin$predicted[wd_age_sin$x == ref_age],
+  wd_age_cos$predicted[wd_age_cos$x == ref_age]
+)
+
+# Adjust observed times
+db$hair_time_corrected <- db$hair_time_shifted - db$pred_time + ref_time
+
+# Compute adjusted means
+means2 <- db %>%
+  group_by(workdays) %>%
+  summarise(
+    mean_age = mean(age),
+    se_hair_time = std.error(hair_time_corrected),
+    mean_hair_time = mean(hair_time_corrected),
+    n = n()
+  )
+
+means2$x <- as.numeric(as.character(means2$workdays))
+
+# =========================================================
+# 7. FINAL PLOT
+# =========================================================
+
+workdays_fig_circular <- ggplot() +
+
+  # RAW (faded)
+  geom_point(data = means,
+             aes(x = x, y = mean_hair_time),
+             color = "#a3bbbf", alpha = 0.5) +
+
+  geom_errorbar(data = means,
+                aes(x = x,
+                    ymin = mean_hair_time - se_hair_time,
+                    ymax = mean_hair_time + se_hair_time),
+                linewidth = 0.3, width = 0.1,
+                color = "#a3bbbf", alpha = 0.5) +
+
+  # ADJUSTED (solid)
+  geom_point(data = means2,
+             aes(x = x, y = mean_hair_time)) +
+
+  geom_errorbar(data = means2,
+                aes(x = x,
+                    ymin = mean_hair_time - se_hair_time,
+                    ymax = mean_hair_time + se_hair_time),
+                linewidth = 0.3, width = 0.1) +
+
+  geom_text(data = means2,
+            aes(label = n,
+                x = workdays + 0.25,
+                y = mean_hair_time + 0.35),
+            color = "#ff4d00") +
+
+  # MODEL LINE
+  geom_line(data = eff_wd_final,
+            aes(x = x, y = hair_time),
+            color = "firebrick", linewidth = 1) +
+
+  geom_ribbon(data = eff_wd_final,
+              aes(x = x,
+                  ymin = conf.low,
+                  ymax = conf.high),
+              fill = "firebrick", alpha = 0.2) +
+
+  theme_bw() +
+  scale_x_continuous("Workdays", breaks = seq(0, 7, 1)) +
+  scale_y_continuous("Predicted DLMO (hours)",
+                     breaks = c(20,20.5,21,21.5,22,22.5,23,23.5,24),
+                     labels = c("20.00","20.50","21.00","21.50",
+                                "22.00","22.50","23.00","23.50","00.00")) +
+  coord_cartesian(ylim = c(19.9, 23.5)) +
+  theme(plot.background = element_rect(fill = "transparent"),
+        panel.border = element_rect(color = "black", fill = NA),
+        axis.text = element_text(size = 10),
+        axis.title = element_text(size = 12, face = "bold"))
+
+workdays_fig_circular
+```
+
