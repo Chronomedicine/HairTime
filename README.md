@@ -10,12 +10,12 @@ doi: https://doi.org/10.1101/2025.03.07.641864
 ## Analysis Files
 
 ### Main Analysis
-- **All_20251125_rev.Rmd**: Main analysis in manuscript
-- **All_20251125_rev.html**: Rendered HTML output of the main analysis
+- **All.Rmd**: Main analysis in manuscript
+- **All.html**: Rendered HTML output of the main analysis
 
 ### Sensitivity Analysis
-- **All_nodup_20251125_rev.Rmd**: Sensitivity analysis with removal of those entries that had a duplicate
-- **All_nodup_20251125_rev.html**: Rendered HTML output of the sensitivity analysis
+- **All_nodupduplicate.Rmd**: Sensitivity analysis with removal of those entries that had a duplicate
+- **All_nodupduplicate.html**: Rendered HTML output of the sensitivity analysis
 
 ## Project Structure
 ```
