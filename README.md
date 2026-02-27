@@ -23,8 +23,8 @@ HairTime/
 ├── README.md                       # This file
 ├── All.Rmd                         # Main analysis
 ├── All.html                        # Main analysis output
-├── All_nodup.Rmd                   # Sensitivity analysis
-└── All_nodup.html                  # Sensitivity analysis output
+├── All_noduplicate.Rmd             # Sensitivity analysis
+└── All_noduplicate.html            # Sensitivity analysis output
 ```
 
 ## Description
