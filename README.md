@@ -3,9 +3,9 @@
 ## Overview
 Analysis supporting the research paper:
 
-**Hair test reveals plasticity of human chronotype**  
+**HairTime: A noninvasive assay for estimating circadian phase from a single hair sample**  
 Bert Maier, Luísa K. Pilz, Selin Özcakir, Ali Rahjouei, Ashraf N Abdo, Jan de Zeeuw, Dieter Kunz, Achim Kramer  
-doi: https://doi.org/10.1101/2025.03.07.641864
+
 
 ## Analysis Files
 
